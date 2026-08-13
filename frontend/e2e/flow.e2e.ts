@@ -331,6 +331,29 @@ test.describe("saving a GIR", () => {
     await expect(page.getByText(/Could not parse the document/)).toBeVisible();
   });
 
+  test("deletes a return only after the cascade is confirmed", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password").fill(PASSWORD);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.waitForURL(/\/returns$/);
+
+    await expect(page.getByRole("link", { name: /Meridian upload/ })).toBeVisible();
+
+    // The control sits over a row that is itself a link, so this also asserts that
+    // pressing it does not navigate into the return it is about to delete.
+    await page.getByRole("button", { name: "Delete Meridian upload" }).click();
+    await expect(page).toHaveURL(/\/returns$/);
+
+    await page.getByRole("button", { name: "Cancel" }).click();
+    await expect(page.getByRole("link", { name: /Meridian upload/ })).toBeVisible();
+
+    await page.getByRole("button", { name: "Delete Meridian upload" }).click();
+    await page.getByRole("button", { name: "Delete", exact: true }).click();
+
+    await expect(page.getByRole("link", { name: /Meridian upload/ })).toBeHidden();
+  });
+
   test("rejects a fractional equity amount before it reaches the API", async ({ page }) => {
     await page.goto("/login");
     await page.getByLabel("Email").fill(email);

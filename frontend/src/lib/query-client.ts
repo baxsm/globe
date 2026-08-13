@@ -21,10 +21,12 @@ const makeQueryClient = (): QueryClient =>
         // "loading flash on prefetched data" this phase is explicitly watching for.
         staleTime: 60_000,
         retry: (failureCount, error) => {
-          // Retrying a 401 or a 404 cannot succeed, and delays the redirect by the
-          // length of the backoff while the user looks at a spinner.
+          // A 4xx says the request itself was wrong, so repeating it cannot succeed and
+          // only delays the redirect by the length of the backoff. The two exceptions ask
+          // to be sent again: 408 timed out and 429 is asking for a slower pace.
           const status = (error as { status?: number }).status;
-          if (status !== undefined && status >= 400 && status < 500) return false;
+          const retryable = status === 408 || status === 429;
+          if (status !== undefined && status >= 400 && status < 500 && !retryable) return false;
           return failureCount < 2;
         },
         refetchOnWindowFocus: false,

@@ -46,8 +46,8 @@ const markedText = (xml: string, applications: readonly ErrataApplication[]) =>
 
 describe("markXml", () => {
   it("marks only the element the application addressed", () => {
-    // The bug this replaced: matching on the element name alone marked every `Total` in
-    // the document, claiming corrections that never happened.
+    // The document holds several `Total` elements. Matching on the element name alone
+    // marks all of them and claims corrections that never happened.
     const marked = markedText(XML, [
       application("globe:JurisdictionSection[1]/globe:AdjustedIncomeTax/globe:Total", 5),
     ]);
