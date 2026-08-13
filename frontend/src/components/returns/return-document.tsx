@@ -1,8 +1,8 @@
 "use client";
 
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { FileQuestion, RefreshCw } from "lucide-react";
-import { type FC, useMemo } from "react";
+import { FileQuestion, RefreshCw, Upload } from "lucide-react";
+import { type FC, useMemo, useState } from "react";
 import Button from "@/components/ui/button";
 import EmptyState from "@/components/ui/empty-state";
 import Measure from "@/components/ui/measure";
@@ -16,6 +16,7 @@ import DocumentNode, { NODE_GRID } from "./document-node";
 import JurisdictionFigures from "./jurisdiction-figures";
 import { ErrataNote, SuppressionNote } from "./margin-note";
 import ReturnHeader from "./return-header";
+import SaveVersionDialog from "./save-version-dialog";
 
 /**
  * The return as a marked-up document.
@@ -28,6 +29,7 @@ import ReturnHeader from "./return-header";
  */
 const ReturnDocument: FC<{ returnId: string }> = ({ returnId }) => {
   const queryClient = useQueryClient();
+  const [saving, setSaving] = useState(false);
 
   const { data } = useSuspenseQuery({
     queryKey: queryKeys.return(returnId),
@@ -65,14 +67,21 @@ const ReturnDocument: FC<{ returnId: string }> = ({ returnId }) => {
   if (document === undefined) {
     return (
       <>
-        <ReturnHeader record={data.return} />
+        <ReturnHeader onSave={() => setSaving(true)} record={data.return} />
         <Measure className="py-8">
           <EmptyState
+            body="Save a GIR against this return and it appears here, with each errata correction marked against the element it changes."
             icon={FileQuestion}
             title="No document saved yet."
-            body="Save a GIR against this return and it appears here, with each errata correction marked against the element it changes."
-          />
+          >
+            <Button onClick={() => setSaving(true)}>
+              <Upload aria-hidden="true" className="size-3.5" strokeWidth={1.75} />
+              Save a GIR
+            </Button>
+          </EmptyState>
         </Measure>
+
+        <SaveVersionDialog onOpenChange={setSaving} open={saving} returnId={returnId} />
       </>
     );
   }

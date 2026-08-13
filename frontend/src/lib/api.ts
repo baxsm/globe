@@ -213,6 +213,17 @@ export const api = {
   listVersions: (id: string, cookie?: string) =>
     request<{ versions: VersionSummary[] }>(`/returns/${id}/versions`, { ...withCookie(cookie) }),
 
+  /**
+   * Saves a GIR against a return, as the wire XML the filer holds.
+   *
+   * `elections` carries the four facts the errata cannot read off the document. A 7.1.2
+   * and a 7.2.2 election are identical once serialized, and a safe harbour computation
+   * looks like an ordinary one, so issues 2, 4, 6 and 7 stay dormant unless the filer
+   * states them here.
+   */
+  createVersion: (id: string, body: { document: string; elections?: VersionElections }) =>
+    request<{ version: VersionSummary }>(`/returns/${id}/versions`, { method: "POST", body }),
+
   referenceIssues: (cookie?: string) =>
     request<{ issues: IssueReference[] }>("/reference/issues", { ...withCookie(cookie) }),
 
@@ -245,6 +256,24 @@ export const api = {
       ...withCookie(cookie),
     }),
 };
+
+/**
+ * What the filer states alongside the document, mirroring the backend's `electionsBody`.
+ *
+ * Every field is optional and absent means "not elected". The backend rejects unknown
+ * keys, so a field renamed on one side fails the save rather than silently disabling the
+ * fix it gates.
+ */
+export interface VersionElections {
+  /** Issue 2: which `UPEAdjustments` elected Article 7.1.2, by 0-based position. */
+  readonly article712BasisIndices?: readonly number[];
+  /** Issue 7: the safe harbour, which writes zeros the schema has no other way to carry. */
+  readonly safeHarbourApplies?: boolean;
+  /** Issue 4: a whole number of currency units, kept as a string past what JSON holds exactly. */
+  readonly equityInclusionAmount?: string;
+  /** Issue 6: TINs for the Unclaimed Accrual Annual Election, empty when aggregated. */
+  readonly unclaimedAccrualAnnualTins?: readonly string[];
+}
 
 /** A stored version as `GET /api/returns/:id` returns it. */
 export interface StoredVersion {
