@@ -1,0 +1,28 @@
+{
+  "name": "@globe/engine",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "verify:schema": "bun run scripts/verify-schema.ts",
+    "typecheck": "tsc --noEmit",
+    "lint": "biome check src",
+    "lint:fix": "biome check --write src"
+  },
+  "dependencies": {
+    "decimal.js": "10.6.0",
+    "fast-xml-parser": "5.10.1",
+    "xmlbuilder2": "4.0.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.8",
+    "@types/node": "26.2.0",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10"
+  }
+}

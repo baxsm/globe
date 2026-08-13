@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globe:GLOBE_OECD xmlns:globe="urn:oecd:ties:globe:v2" version="1.0">
+	<globe:MessageSpec>
+		<globe:TransmittingCountry>FR</globe:TransmittingCountry>
+		<globe:MessageType>GIR</globe:MessageType>
+	</globe:MessageSpec>
+	<globe:GLOBEBody>
+		<globe:TrailingZero>0.10</globe:TrailingZero>
+		<globe:HighPrecision>0.000000000000000000001</globe:HighPrecision>
+		<globe:BeyondFloat64>9007199254740993</globe:BeyondFloat64>
+		<globe:LeadingZero>007</globe:LeadingZero>
+		<globe:ExplicitPlus>+1.5</globe:ExplicitPlus>
+		<globe:NegativeZero>-0.00</globe:NegativeZero>
+		<globe:Exponential>1.0E-7</globe:Exponential>
+		<globe:BigTrailing>1234567890123456789012345678901234567890.0000</globe:BigTrailing>
+		<globe:EmptySelfClosing/>
+		<globe:EmptyPaired></globe:EmptyPaired>
+		<globe:Ampersand>Smith &amp; Sons</globe:Ampersand>
+		<globe:Angles>a &lt; b &gt; c</globe:Angles>
+		<globe:Quotes>she said "yes" and 'no'</globe:Quotes>
+		<globe:PreEscaped>already &amp;amp; escaped</globe:PreEscaped>
+		<globe:Unicode>Ährenfeld Ünïcodé 中文 🌍</globe:Unicode>
+		<globe:AttrOrder alpha="1" beta="2" gamma="3">ordered</globe:AttrOrder>
+		<globe:Whitespace>  padded  </globe:Whitespace>
+	</globe:GLOBEBody>
+</globe:GLOBE_OECD>

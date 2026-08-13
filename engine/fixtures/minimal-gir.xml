@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globe:GLOBE_OECD xmlns:globe="urn:oecd:ties:globe:v2" xmlns:iso="urn:oecd:ties:isoglobetypes:v1" xmlns:stf="urn:oecd:ties:globestf:v5" version="1.0">
+	<globe:MessageSpec>
+		<globe:TransmittingCountry>FR</globe:TransmittingCountry>
+		<globe:ReceivingCountry>DE</globe:ReceivingCountry>
+		<globe:MessageType>GIR</globe:MessageType>
+		<globe:MessageRefId>FR2026GIR00000000000000000001</globe:MessageRefId>
+		<globe:MessageTypeIndic>GIR101</globe:MessageTypeIndic>
+		<globe:ReportingPeriod>2024-12-31</globe:ReportingPeriod>
+		<globe:Timestamp>2026-08-13T09:30:00Z</globe:Timestamp>
+	</globe:MessageSpec>
+	<globe:GLOBEBody>
+		<globe:FilingInfo>
+			<globe:FilingCE>
+				<globe:ResCountryCode>FR</globe:ResCountryCode>
+				<globe:Name>Example Group Holdings SA</globe:Name>
+				<globe:TIN issuedBy="FR">FR12345678901</globe:TIN>
+				<globe:Role>GIR401</globe:Role>
+			</globe:FilingCE>
+			<globe:AccountingInfo>
+				<globe:CFSofUPE>GIR501</globe:CFSofUPE>
+				<globe:FAS>IFRS</globe:FAS>
+				<globe:Currency>EUR</globe:Currency>
+			</globe:AccountingInfo>
+			<globe:Period>
+				<globe:Start>2024-01-01</globe:Start>
+				<globe:End>2024-12-31</globe:End>
+			</globe:Period>
+			<globe:NameMNE>Example Group</globe:NameMNE>
+			<globe:DocSpec>
+				<stf:DocTypeIndic>OECD1</stf:DocTypeIndic>
+				<stf:DocRefId>FR2026GIR00000000000000000001D1</stf:DocRefId>
+			</globe:DocSpec>
+		</globe:FilingInfo>
+	</globe:GLOBEBody>
+</globe:GLOBE_OECD>

@@ -1,5 +1,9 @@
 * text=auto eol=lf
-*.xsd text eol=lf
+
+# upstream schema fixtures are byte-pinned against published sizes and hashes.
+# git must not normalise their line endings.
+engine/src/schema/xsd/** -text
+
 *.png binary
 *.zip binary
 *.pdf binary
