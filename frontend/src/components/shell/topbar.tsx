@@ -16,6 +16,10 @@ import CommandTrigger from "./command-trigger";
  * What a filing is being read against decides whether a finding means anything, so it
  * sits in the chrome on every page. It reads from the prefetched query, so it is
  * present in the server-rendered HTML rather than appearing a moment after hydration.
+ *
+ * Sticky for the same reason. As a static header it left the viewport on the first
+ * scroll, and the reference page and the XML export both run several screens tall, so
+ * the version was absent for most of the time a reader spends on them.
  */
 const Topbar: FC<{ email: string }> = ({ email }) => {
   const router = useRouter();
@@ -41,7 +45,7 @@ const Topbar: FC<{ email: string }> = ({ email }) => {
   };
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-4 border-border border-b bg-surface px-4 sm:px-6">
+    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-4 border-border border-b bg-surface/95 px-4 backdrop-blur-sm sm:px-6">
       <CommandTrigger />
 
       <div className="ml-auto flex min-w-0 items-center gap-3 sm:gap-4">
