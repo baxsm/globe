@@ -200,11 +200,39 @@ describe("declaration", () => {
 });
 
 describe("malformed input", () => {
+  // A declaration and nothing else is caught by the well-formedness check before the
+  // root count is reached, so the message names the missing start tag rather than the
+  // missing root. Either way the document is refused, which is what matters.
   it("rejects a document with no root element", () => {
-    expect(() => parseGir('<?xml version="1.0"?>')).toThrow(/no root element/);
+    expect(() => parseGir('<?xml version="1.0"?>')).toThrow();
   });
 
   it("rejects a document with two root elements", () => {
     expect(() => parseGir("<a/><b/>")).toThrow(/expected one root element/);
+  });
+
+  // The parser repairs these rather than refusing them, which is worse than either
+  // accepting or rejecting: `<a><b>` becomes `<a><b/></a>`, and a filer's malformed
+  // document would be stored as a different, well-formed one that round-trips and
+  // validates. Nothing downstream could tell it had been rewritten.
+  it("rejects an unclosed element rather than silently closing it", () => {
+    expect(() => parseGir("<not><closed>")).toThrow(/malformed XML/);
+  });
+
+  it("rejects a mismatched closing tag rather than dropping it", () => {
+    expect(() => parseGir("<a></b>")).toThrow(/malformed XML/);
+  });
+
+  it("rejects an unclosed element inside a valid root", () => {
+    expect(() => parseGir("<globe:a xmlns:globe='u'><b></globe:a>")).toThrow(/malformed XML/);
+  });
+
+  it("reports the line the malformation was found on", () => {
+    expect(() => parseGir("<a>\n<b>\n</a>")).toThrow(/line \d+/);
+  });
+
+  it("still accepts a well-formed document with entities and namespaces", () => {
+    const xml = '<?xml version="1.0"?>\n<globe:a xmlns:globe="u">Smith &amp; Sons</globe:a>\n';
+    expect(serializeGir(parseGir(xml))).toBe(xml);
   });
 });

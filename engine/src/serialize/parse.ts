@@ -1,4 +1,4 @@
-import { XMLParser } from "fast-xml-parser";
+import { XMLParser, XMLValidator } from "fast-xml-parser";
 import type { GirAttribute, GirDocument, GirElement, GirNode } from "./types";
 
 const ATTRIBUTE_PREFIX = "@_";
@@ -119,7 +119,27 @@ const readEpilogue = (xml: string, rootName: string): string => {
   return selfClosing ? xml.slice(selfClosing.index + 2) : "";
 };
 
+/**
+ * Rejects malformed XML before parsing it.
+ *
+ * `XMLParser` silently repairs rather than refuses: `<a><b>` comes back as
+ * `<a><b/></a>` and `<a></b>` comes back as `<a/>`, both of which parse, round-trip
+ * and validate. A filer who submitted an unclosed document would have it stored as a
+ * different, well-formed one, and nothing downstream could tell. The validator is the
+ * only thing that distinguishes a document from a repair of it.
+ */
+const assertWellFormed = (xml: string): void => {
+  const result = XMLValidator.validate(xml);
+  if (result === true) return;
+
+  const detail = result.err.msg;
+  const line = result.err.line;
+  throw new Error(`malformed XML at line ${line}: ${detail}`);
+};
+
 export const parseGir = (xml: string): GirDocument => {
+  assertWellFormed(xml);
+
   const parsed = new XMLParser(PARSER_OPTIONS).parse(xml) as RawNode[];
 
   const roots = toNodes(parsed, pairedEmptyNames(xml)).filter(
