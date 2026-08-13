@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { parseGir } from "../../serialize/parse";
 import { serializeGir } from "../../serialize/serialize";
+import { isElement } from "../../serialize/types";
 import {
-  appendChildrenAt,
   findByPath,
   findOneByPath,
+  insertBefore,
   localName,
   rawText,
+  removeAt,
   replaceAt,
 } from "../path";
 
@@ -133,26 +135,58 @@ describe("replaceAt", () => {
   });
 });
 
-describe("appendChildrenAt", () => {
-  it("adds a child to the located element", () => {
-    const match = findOneByPath(document.root, "GLOBEBody/JurisdictionSection");
-    const appended = appendChildrenAt(document.root, match?.indices ?? [], [
-      {
-        kind: "element",
-        name: "globe:Added",
-        attributes: [],
-        children: [{ kind: "text", value: "x" }],
-        paired: false,
-      },
-    ]);
+const added = {
+  kind: "element" as const,
+  name: "globe:Added",
+  attributes: [],
+  children: [{ kind: "text" as const, value: "x" }],
+  paired: false,
+};
 
-    expect(findByPath(appended, "GLOBEBody/JurisdictionSection/Added")).toHaveLength(1);
+describe("insertBefore", () => {
+  it("puts the addition before the named sibling", () => {
+    // The augmenting rules add an `AdditionalDataPoint` to a `JurisdictionSection`, which
+    // the schema places before `DocSpec`. Appending to the end lands it after, out of
+    // sequence, and libxml2 rejects the document.
+    const match = findOneByPath(document.root, "GLOBEBody/JurisdictionSection");
+    const inserted = insertBefore(document.root, match?.indices ?? [], "GLOBETax", added);
+
+    const section = findOneByPath(inserted, "GLOBEBody/JurisdictionSection");
+    const names = (section?.element.children ?? [])
+      .filter(isElement)
+      .map((child) => localName(child.name));
+
+    expect(names.indexOf("Added")).toBeLessThan(names.indexOf("GLOBETax"));
   });
 
-  it("keeps the rest of the document serialisable and unchanged", () => {
+  it("appends where the anchor is absent", () => {
     const match = findOneByPath(document.root, "GLOBEBody/JurisdictionSection");
-    const appended = appendChildrenAt(document.root, match?.indices ?? [], []);
+    const inserted = insertBefore(document.root, match?.indices ?? [], "NotAThing", added);
 
-    expect(serializeGir({ ...document, root: appended })).toBe(serializeGir(document));
+    expect(findByPath(inserted, "GLOBEBody/JurisdictionSection/Added")).toHaveLength(1);
+  });
+});
+
+describe("removeAt", () => {
+  it("removes the located element", () => {
+    const match = findOneByPath(document.root, "GLOBEBody/JurisdictionSection/GLOBETax");
+    const removed = removeAt(document.root, match?.indices ?? []);
+
+    expect(findByPath(removed, "GLOBEBody/JurisdictionSection/GLOBETax")).toHaveLength(1);
+  });
+
+  it("takes the indentation before it, leaving no blank line", () => {
+    // The serializer preserves whatever is in the tree, so a removal that left the
+    // preceding whitespace node behind would add a stray indent to the output.
+    const match = findOneByPath(document.root, "GLOBEBody/JurisdictionSection/GLOBETax");
+    const removed = removeAt(document.root, match?.indices ?? []);
+
+    expect(serializeGir({ ...document, root: removed })).not.toContain("\n\t\t\t\n");
+  });
+
+  it("leaves the document alone for indices that resolve to nothing", () => {
+    expect(serializeGir({ ...document, root: removeAt(document.root, [99]) })).toBe(
+      serializeGir(document),
+    );
   });
 });

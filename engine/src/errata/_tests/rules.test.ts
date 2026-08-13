@@ -268,17 +268,33 @@ describe("issue 12, the redundant UTPR safe harbour", () => {
     ${safeHarbour}
   </globe:UTPR></globe:LowTaxJurisdiction></globe:JurisdictionSection></globe:GLOBEBody>`;
 
-  it("blanks the redundant element", () => {
+  it("removes the redundant element rather than emptying it", () => {
+    // `UTPRSafeHarbour` is optional but its `CITRate` child is mandatory, so an element
+    // present with no children is invalid. Emptying it, which is the intuitive reading of
+    // "left blank", turns a filing the schema accepts into one it refuses.
     const result = applyIssue12(
       parse(jurisdiction("<globe:UTPRSafeHarbour>GIR701</globe:UTPRSafeHarbour>")),
     );
 
-    expect(textAt(result.document, UTPR_PATH)).toEqual([""]);
+    expect(textAt(result.document, UTPR_PATH)).toEqual([]);
     expect(result.applications[0]?.paragraph).toBe("36");
   });
 
-  it("leaves an already blank element alone", () => {
-    const result = applyIssue12(parse(jurisdiction("<globe:UTPRSafeHarbour/>")));
+  it("takes the empty UTPR wrapper with it", () => {
+    // `UTPR` is an xsd:choice requiring one of UTPRSafeHarbour or UTPRCalculation, so
+    // removing the only child and leaving the wrapper is invalid too. `UTPR` is itself
+    // optional, so the wrapper can go.
+    const result = applyIssue12(
+      parse(jurisdiction("<globe:UTPRSafeHarbour>GIR701</globe:UTPRSafeHarbour>")),
+    );
+
+    expect(
+      findByPath(result.document.root, "GLOBEBody/JurisdictionSection/LowTaxJurisdiction/UTPR"),
+    ).toEqual([]);
+  });
+
+  it("reports nothing once the element is gone", () => {
+    const result = applyIssue12(parse(jurisdiction("")));
 
     expect(result.applications).toEqual([]);
   });

@@ -1,5 +1,5 @@
 import type { GirDocument, GirElement, GirNode } from "../serialize/types";
-import { appendChildrenAt, findByPath, rawText, replaceAt } from "./path";
+import { findByPath, insertBefore, rawText, replaceAt } from "./path";
 import type { Application, Rule, RuleResult } from "./types";
 
 /**
@@ -126,9 +126,12 @@ export const applyIssue2 = (document: GirDocument, context: Issue2Context): Rule
     const hasException = exceptions.length > 0;
     const dataPoint = buildAdditionalDataPoint(prefix, amount, hasException, BASIS_PATH);
 
-    // Appended against the rewritten tree, not the one read at the start, so the Basis
-    // substitutions above are not discarded.
-    root = appendChildrenAt(root, parent.indices, [dataPoint]);
+    // Inserted against the rewritten tree, not the one read at the start, so the Basis
+    // substitutions above are not discarded. Before `DocSpec` rather than at the end:
+    // `AdditionalDataPoint` is the last element of `JurisdictionSectionType` and `DocSpec`
+    // is appended after it by the extension, so appending puts it out of sequence and
+    // libxml2 rejects the result.
+    root = insertBefore(root, parent.indices, "DocSpec", dataPoint);
 
     applications.push({
       issue: 2,

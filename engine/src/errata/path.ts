@@ -145,25 +145,72 @@ export const replaceAt = (
   return { ...root, children };
 };
 
-/** Returns a copy of the tree with children appended to one element. */
-export const appendChildrenAt = (
-  root: GirElement,
-  indices: readonly number[],
-  additions: readonly GirNode[],
-): GirElement => {
-  const located = indices.reduce<GirElement | undefined>((element, index) => {
+/** The element a set of indices addresses, or undefined where the path does not resolve. */
+export const elementAt = (root: GirElement, indices: readonly number[]): GirElement | undefined =>
+  indices.reduce<GirElement | undefined>((element, index) => {
     const child = element?.children[index];
     return child !== undefined && isElement(child) ? child : undefined;
   }, root);
 
-  if (located === undefined) return root;
+/**
+ * Returns a copy of the tree with one element removed.
+ *
+ * The whitespace text node before it goes too, so removing an element does not leave the
+ * blank line it used to sit on. The serializer preserves whatever is in the tree, so
+ * without this the output gains a stray indent every time a rule drops something.
+ */
+export const removeAt = (root: GirElement, indices: readonly number[]): GirElement => {
+  const [head, ...rest] = indices;
+  if (head === undefined) return root;
 
-  return replaceAt(root, indices, {
-    ...located,
-    children: [...located.children, ...additions],
-  });
+  const children = [...root.children];
+  const child = children[head];
+  if (child === undefined || !isElement(child)) return root;
+
+  if (rest.length > 0) {
+    children[head] = removeAt(child, rest);
+    return { ...root, children };
+  }
+
+  const preceding = children[head - 1];
+  const from = preceding !== undefined && !isElement(preceding) ? head - 1 : head;
+  children.splice(from, head - from + 1);
+
+  return { ...root, children };
 };
 
 /** Text of an element in source form, entities left as they were written. */
 export const rawText = (element: GirElement): string =>
   element.children.map((child) => (isElement(child) ? "" : child.value)).join("");
+
+/**
+ * Returns a copy of the tree with a child inserted before the first `named` sibling.
+ *
+ * The augmenting rules all add an `AdditionalDataPoint` to a `JurisdictionSection`, which
+ * is the last element of `JurisdictionSectionType`. `DocSpec` is appended after it by the
+ * extension in `GLOBEBody_Type`, so appending to the end lands the addition after
+ * `DocSpec`, out of sequence, and libxml2 rejects the document. A rule whose purpose is to
+ * carry data the schema has no room for must not produce a document the schema refuses.
+ *
+ * Falls back to appending where the anchor is absent, which is the right answer for a
+ * parent that has no `DocSpec` to sit before.
+ */
+export const insertBefore = (
+  root: GirElement,
+  indices: readonly number[],
+  named: string,
+  addition: GirNode,
+): GirElement => {
+  const parent = elementAt(root, indices);
+  if (parent === undefined) return root;
+
+  const at = parent.children.findIndex(
+    (child) => isElement(child) && localName(child.name).toLowerCase() === named.toLowerCase(),
+  );
+
+  const children = [...parent.children];
+  if (at === -1) children.push(addition);
+  else children.splice(at, 0, addition);
+
+  return replaceAt(root, indices, { ...parent, children });
+};

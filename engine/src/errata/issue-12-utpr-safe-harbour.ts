@@ -1,5 +1,6 @@
 import type { GirDocument } from "../serialize/types";
-import { findByPath, rawText, replaceAt } from "./path";
+import { isElement } from "../serialize/types";
+import { elementAt, findByPath, removeAt } from "./path";
 import type { Application, RuleResult } from "./types";
 
 /**
@@ -30,22 +31,43 @@ const REDUNDANT_PATH = "GLOBEBody/JurisdictionSection/LowTaxJurisdiction/UTPR/UT
 const CANONICAL_PATH =
   "GLOBEBody/JurisdictionSection/GLoBETax/ETR/ETRStatus/ETRException/UTPRSafeHarbour";
 
+/**
+ * "Left blank" means omitted, and the empty wrapper goes with it.
+ *
+ * Three schema facts decide this. `UTPRSafeHarbour` is `minOccurs="0"` but its `CITRate`
+ * child is mandatory, so an element present with no children is invalid. `UTPR` is an
+ * `xsd:choice` requiring one of `UTPRSafeHarbour` or `UTPRCalculation`, so removing the
+ * safe harbour and leaving the wrapper is invalid too. `UTPR` is itself optional, so the
+ * wrapper can go.
+ *
+ * Emptying the element, which is the intuitive reading of "left blank", turns a filing the
+ * schema accepts into one it refuses. A rule carrying out the guidance must not do that.
+ */
 export const applyIssue12 = (document: GirDocument): RuleResult => {
-  const redundant = findByPath(document.root, REDUNDANT_PATH);
   const applications: Application[] = [];
   let root = document.root;
 
-  for (const found of redundant) {
-    if (rawText(found.element).length === 0 && found.element.children.length === 0) continue;
+  // Re-resolved each pass because removing one element shifts the indices of its
+  // siblings, which would make a second stored index address the wrong node.
+  for (;;) {
+    const found = findByPath(root, REDUNDANT_PATH)[0];
+    if (found === undefined) break;
 
-    root = replaceAt(root, found.indices, { ...found.element, children: [], paired: false });
+    // The parent is this element's own, addressed by dropping the last index rather than
+    // by searching again: a second `UTPR` elsewhere in the document must not be the one
+    // that gets removed.
+    const parentIndices = found.indices.slice(0, -1);
+    const parent = elementAt(root, parentIndices);
+    const onlyChild = parent !== undefined && parent.children.filter(isElement).length === 1;
+
+    root = removeAt(root, onlyChild ? parentIndices : found.indices);
 
     applications.push({
       issue: 12,
       kind: "substitution",
       path: found.path,
       schemaExpected: `a value here, duplicating ${CANONICAL_PATH}`,
-      errataApplied: "left blank",
+      errataApplied: "left blank, so the element is not reported",
       paragraph: "36",
       reason: `redundant with ${CANONICAL_PATH}, which is the element the guidance keeps`,
     });

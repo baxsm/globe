@@ -112,11 +112,31 @@
 			<globe:GLoBETax>
 				<globe:ETR>
 					<globe:ETRStatus>
+						<globe:ETRException>
+							<globe:UTPRSafeHarbour>
+								<globe:CITRate>0.2000</globe:CITRate>
+							</globe:UTPRSafeHarbour>
+						</globe:ETRException>
 						<globe:ETRComputation>
 						<globe:CEComputation>
 							<globe:AdjustedFANIL>
 								<globe:Total>2400000</globe:Total>
 								<globe:FANIL>2400000</globe:FANIL>
+								<globe:Adjustment>
+									<globe:UPEAdjustments>
+										<globe:Basis>GIR1909</globe:Basis>
+										<globe:Reductions>
+											<globe:Amount>62000</globe:Amount>
+										</globe:Reductions>
+										<globe:IdentificationOfOwners>
+											<globe:OwnershipPercentage>1.0000</globe:OwnershipPercentage>
+											<globe:EntityOwner>
+												<globe:TIN issuedBy="FR">FR98765432109</globe:TIN>
+												<globe:ResCountryCode>FR</globe:ResCountryCode>
+											</globe:EntityOwner>
+										</globe:IdentificationOfOwners>
+									</globe:UPEAdjustments>
+								</globe:Adjustment>
 							</globe:AdjustedFANIL>
 							<globe:NetGlobeIncome>
 								<globe:Total>2400000</globe:Total>
@@ -168,6 +188,14 @@
 					</globe:ETRStatus>
 				</globe:ETR>
 			</globe:GLoBETax>
+			<globe:LowTaxJurisdiction>
+				<globe:TopUpTaxAmount>108000</globe:TopUpTaxAmount>
+				<globe:UTPR>
+					<globe:UTPRSafeHarbour>
+						<globe:CITRate>0.2000</globe:CITRate>
+					</globe:UTPRSafeHarbour>
+				</globe:UTPR>
+			</globe:LowTaxJurisdiction>
 			<globe:DocSpec>
 				<stf:DocTypeIndic>OECD1</stf:DocTypeIndic>
 				<stf:DocRefId>FR2026GIR00000000000000000002D3</stf:DocRefId>
@@ -291,5 +319,20 @@
 				<stf:DocRefId>FR2026GIR00000000000000000002D5</stf:DocRefId>
 			</globe:DocSpec>
 		</globe:JurisdictionSection>
+		<globe:UTPRAttribution>
+			<globe:RecJurCode>DE</globe:RecJurCode>
+			<globe:Attribution>
+				<globe:ResCountryCode>DE</globe:ResCountryCode>
+				<globe:UTPRTopUpTaxCarryForward>0</globe:UTPRTopUpTaxCarryForward>
+				<globe:UTPRPercentage>0.3500</globe:UTPRPercentage>
+				<globe:UTPRTopUpTaxAttributed>42000</globe:UTPRTopUpTaxAttributed>
+				<globe:AddCashTaxExpense>0</globe:AddCashTaxExpense>
+				<globe:UTPRTopUpTaxCarriedForward>0</globe:UTPRTopUpTaxCarriedForward>
+			</globe:Attribution>
+			<globe:DocSpec>
+				<stf:DocTypeIndic>OECD1</stf:DocTypeIndic>
+				<stf:DocRefId>FR2026GIR00000000000000000002D6</stf:DocRefId>
+			</globe:DocSpec>
+		</globe:UTPRAttribution>
 	</globe:GLOBEBody>
 </globe:GLOBE_OECD>

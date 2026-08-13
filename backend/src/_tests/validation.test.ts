@@ -318,7 +318,7 @@ describe("elections reaching the conditional rules", () => {
     );
 
     const issues = [...new Set(body.errata.map((application) => application.issueNumber))];
-    expect(issues.sort((a, b) => a - b)).toEqual([1, 5, 13]);
+    expect(issues.sort((a, b) => a - b)).toEqual([1, 3, 5, 12, 13]);
   });
 
   it("fires issues 4, 6 and 7 once the filer states the condition", async () => {
