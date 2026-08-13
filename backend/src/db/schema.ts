@@ -63,6 +63,30 @@ export const returns = pgTable(
  * every later read. The service retries on the conflict rather than sequencing in
  * application code, because application-level sequencing cannot see the other connection.
  */
+/**
+ * What the filer states about a document that the document itself cannot express.
+ *
+ * Four of the fourteen fixes are conditional on an election or a safe harbour, and the
+ * engine cannot infer any of them. A 7.1.2 and a 7.2.2 election are identical once
+ * written, and a safe harbour looks like an ordinary computation. Defaulting them to
+ * "on" would rewrite every legitimate filing into a different claim; defaulting them to
+ * "off", which is what the API did before this column existed, made those four rules
+ * unreachable from any real document.
+ *
+ * Stored per version rather than per return because they describe one saved document,
+ * and a version is immutable.
+ */
+export interface VersionElections {
+  /** Issue 2: which `UPEAdjustments` elected Article 7.1.2, by position. */
+  readonly article712BasisIndices?: readonly number[] | undefined;
+  /** Issue 7: a safe harbour reduces top-up tax to zero, so only the SBIE is required. */
+  readonly safeHarbourApplies?: boolean | undefined;
+  /** Issue 4: the equity gain or loss under an Equity Investment Inclusion Election. */
+  readonly equityInclusionAmount?: string | undefined;
+  /** Issue 6: TINs for the Unclaimed Accrual Annual Election, empty when aggregated. */
+  readonly unclaimedAccrualAnnualTins?: readonly string[] | undefined;
+}
+
 export const returnVersions = pgTable(
   "return_versions",
   {
@@ -72,6 +96,7 @@ export const returnVersions = pgTable(
       .references(() => returns.id, { onDelete: "cascade" }),
     version: integer("version").notNull(),
     document: jsonb("document").notNull(),
+    elections: jsonb("elections").$type<VersionElections>().notNull().default({}),
     xml: text("xml"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },

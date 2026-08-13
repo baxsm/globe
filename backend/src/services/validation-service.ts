@@ -1,4 +1,4 @@
-import type { Application, Finding, Suppression } from "@globe/engine";
+import type { Application, ErrataContext, Finding, Suppression } from "@globe/engine";
 import {
   applyErrata,
   defaultContext,
@@ -9,7 +9,12 @@ import {
 } from "@globe/engine";
 import { desc, eq } from "drizzle-orm";
 import { db } from "@/db/client";
-import { errataApplications, type ValidationStatus, validationRuns } from "@/db/schema";
+import {
+  errataApplications,
+  type ValidationStatus,
+  type VersionElections,
+  validationRuns,
+} from "@/db/schema";
 import { logger } from "@/lib/logger";
 import { ENGINE_VERSION } from "@/lib/reference";
 import { requireVersion, type StoredDocument, storeXml } from "./version-service";
@@ -127,7 +132,7 @@ export const runValidation = async (
     // The filing year drives issue 3, which is scoped to 2026 filings only. It comes
     // from the document's own reporting period rather than from today's date, so
     // re-running an old return next year does not change what the engine applies.
-    const errata = applyErrata(document, defaultContext(reportingYear(stored.createdAt)));
+    const errata = applyErrata(document, errataContext(stored.createdAt, stored.elections));
     applications = errata.applications;
 
     computed = toComputed(document);
@@ -275,7 +280,7 @@ export const generateXml = async (
   const stored = await requireVersion(returnId, userId, version);
   const document = stored.document as StoredDocument;
 
-  const errata = applyErrata(document, defaultContext(reportingYear(stored.createdAt)));
+  const errata = applyErrata(document, errataContext(stored.createdAt, stored.elections));
   const xml = serializeGir(errata.document);
 
   await storeXml(stored.id, xml);
@@ -283,5 +288,54 @@ export const generateXml = async (
   return { xml, byteLength: Buffer.byteLength(xml, "utf8") };
 };
 
+/**
+ * The exported XML without writing anything.
+ *
+ * `generateXml` caches its result on the version, which is correct for the POST that asks
+ * for an export to be produced. Serving the GET through it would make a read mutate a row
+ * on every page load, so the read path serializes and returns without storing. The bytes
+ * are identical either way: both run the same errata over the same stored document.
+ */
+export const readXml = async (
+  returnId: string,
+  userId: string,
+  version: number,
+): Promise<string> => {
+  const stored = await requireVersion(returnId, userId, version);
+  const document = stored.document as StoredDocument;
+
+  const errata = applyErrata(document, errataContext(stored.createdAt, stored.elections));
+  return serializeGir(errata.document);
+};
+
 /** The year a version belongs to, used to scope the first-cycle-only rules. */
 const reportingYear = (createdAt: Date): number => createdAt.getUTCFullYear();
+
+/**
+ * The engine's context, built from what the filer stated about this version.
+ *
+ * `defaultContext` enables nothing, which is the right default: writing `GIR1910`
+ * unconditionally would rewrite every legitimate Article 7.2.2 filing into a different
+ * claim. But passing it alone, which is what this service did before `elections` existed,
+ * left issues 2, 4, 6 and 7 unreachable from any document the API could store. The
+ * elections are the filer's answer, so they are spread over the default rather than
+ * replacing it.
+ */
+const errataContext = (createdAt: Date, elections: VersionElections): ErrataContext => {
+  const base = defaultContext(reportingYear(createdAt));
+
+  return {
+    ...base,
+    article712BasisIndices: elections.article712BasisIndices ?? base.article712BasisIndices,
+    safeHarbourApplies: elections.safeHarbourApplies ?? base.safeHarbourApplies,
+    // Both stay undefined when unstated. The registry keys off `undefined` to decide
+    // whether the rule runs at all, so an empty string or an empty array would turn the
+    // rule on with nothing to say.
+    ...(elections.equityInclusionAmount === undefined
+      ? {}
+      : { equityInclusionAmount: elections.equityInclusionAmount }),
+    ...(elections.unclaimedAccrualAnnualTins === undefined
+      ? {}
+      : { unclaimedAccrualAnnualTins: elections.unclaimedAccrualAnnualTins }),
+  };
+};

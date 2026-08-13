@@ -10,7 +10,7 @@ import {
   requireReturn,
   updateReturn,
 } from "@/services/return-service";
-import { generateXml, latestRun, runValidation } from "@/services/validation-service";
+import { generateXml, latestRun, readXml, runValidation } from "@/services/validation-service";
 import {
   createVersion,
   diffVersions,
@@ -45,8 +45,34 @@ const patchBody = z
  * parsed, so a document that cannot round-trip is rejected at save time rather than at
  * export time, when it would be far less obvious what changed it.
  */
+/**
+ * What the filer states alongside the document.
+ *
+ * Four of the fourteen fixes cannot be inferred from the XML: a 7.1.2 and a 7.2.2
+ * election are identical once written, and a safe harbour looks like an ordinary
+ * computation. Every field is optional and absent means "not elected", so a save that
+ * omits the object behaves exactly as it did before this existed.
+ *
+ * `.strict()` because a typo here silently disables a fix rather than raising anything.
+ */
+const electionsBody = z
+  .object({
+    article712BasisIndices: z.array(z.number().int().nonnegative()).optional(),
+    safeHarbourApplies: z.boolean().optional(),
+    // A monetary amount, kept as a string. The schema types these as xsd:integer and a
+    // group reporting in a minor currency unit can exceed what a JSON number holds
+    // exactly.
+    equityInclusionAmount: z
+      .string()
+      .regex(/^-?\d+$/, "Use a whole number of currency units")
+      .optional(),
+    unclaimedAccrualAnnualTins: z.array(z.string().min(1).max(200)).optional(),
+  })
+  .strict();
+
 const versionBody = z.object({
   document: z.string().min(1, "The document is empty"),
+  elections: electionsBody.optional(),
 });
 
 /** A version number in a path. Rejects `0`, negatives and anything non-numeric. */
@@ -127,7 +153,7 @@ export const returnRoutes = new Hono<AppEnv>()
   )
 
   .post("/:id/versions", validate("json", versionBody), async (c) => {
-    const { document } = c.req.valid("json");
+    const { document, elections } = c.req.valid("json");
 
     return c.json(
       {
@@ -135,6 +161,7 @@ export const returnRoutes = new Hono<AppEnv>()
           returnIdParam(c.req.param("id")),
           c.get("userId"),
           documentFromXml(document),
+          elections ?? {},
         ),
       },
       201,
@@ -200,7 +227,9 @@ export const returnRoutes = new Hono<AppEnv>()
   })
 
   .get("/:id/versions/:version/xml", async (c) => {
-    const { xml } = await generateXml(
+    // The read path, which does not cache. A GET that writes a row would take a write on
+    // every page load of the export view.
+    const xml = await readXml(
       returnIdParam(c.req.param("id")),
       c.get("userId"),
       versionParam(c.req.param("version")),

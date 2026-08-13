@@ -295,3 +295,88 @@ describe("engine failure", () => {
     expect(body.run.suppressions).toEqual(suppressionRecords);
   });
 });
+
+/**
+ * The conditional rules were unreachable until the API could carry an election.
+ *
+ * Issues 2, 4, 6 and 7 fire only where the filer states a condition the document cannot
+ * express: a 7.1.2 and a 7.2.2 election are identical once written, and a safe harbour
+ * looks like an ordinary computation. The service passed `defaultContext` alone, which
+ * enables none of them, so four of the fourteen fixes could not be triggered by any
+ * document the API would accept. A green suite over rules nothing can reach looks exactly
+ * like a green suite over live ones.
+ */
+describe("elections reaching the conditional rules", () => {
+  it("fires the unconditional rules without any election", async () => {
+    const session = await signUp("unconditional@example.com");
+    const { returnId, version } = await returnWithVersion(session, fixture("rich-gir.xml"));
+
+    const body = await json<RunResponse>(
+      await asUser(session, `/api/returns/${returnId}/versions/${version}/validate`, {
+        method: "POST",
+      }),
+    );
+
+    const issues = [...new Set(body.errata.map((application) => application.issueNumber))];
+    expect(issues.sort((a, b) => a - b)).toEqual([1, 5, 13]);
+  });
+
+  it("fires issues 4, 6 and 7 once the filer states the condition", async () => {
+    const session = await signUp("elected@example.com");
+    const { returnId, version } = await returnWithVersion(session, fixture("rich-gir.xml"), {
+      safeHarbourApplies: true,
+      equityInclusionAmount: "125000",
+      unclaimedAccrualAnnualTins: ["IE4455667T"],
+    });
+
+    const body = await json<RunResponse>(
+      await asUser(session, `/api/returns/${returnId}/versions/${version}/validate`, {
+        method: "POST",
+      }),
+    );
+
+    const issues = new Set(body.errata.map((application) => application.issueNumber));
+    expect(issues.has(4)).toBe(true);
+    expect(issues.has(6)).toBe(true);
+    expect(issues.has(7)).toBe(true);
+  });
+
+  it("addresses every application to a distinct node", async () => {
+    // Three jurisdictions each produce an issue 5 application. Identical paths mean the
+    // margin cannot tell which node an annotation belongs to, and it lands on whichever
+    // matched first. That misalignment reads as plausible rather than broken.
+    const session = await signUp("distinct@example.com");
+    const { returnId, version } = await returnWithVersion(session, fixture("rich-gir.xml"));
+
+    const body = await json<RunResponse>(
+      await asUser(session, `/api/returns/${returnId}/versions/${version}/validate`, {
+        method: "POST",
+      }),
+    );
+
+    const paths = body.errata.map((application) => application.xpath);
+    expect(new Set(paths).size).toBe(paths.length);
+  });
+
+  it("rejects an unknown election rather than ignoring the typo", async () => {
+    const session = await signUp("typo@example.com");
+    const created = await json<{ return: { id: string } }>(
+      await asUser(session, "/api/returns", {
+        method: "POST",
+        body: { name: "Typo", reportingPeriod: "2024-12-31" },
+      }),
+    );
+
+    const response = await asUser(session, `/api/returns/${created.return.id}/versions`, {
+      method: "POST",
+      body: {
+        document: fixture("rich-gir.xml"),
+        elections: { safeHarbourApplys: true },
+      },
+    });
+
+    // Without `.strict()` the misspelling is stripped and the safe harbour silently does
+    // not apply, which is indistinguishable from choosing not to elect it.
+    expect(response.status).toBe(400);
+  });
+});

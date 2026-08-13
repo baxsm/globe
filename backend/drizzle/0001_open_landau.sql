@@ -1,0 +1,1 @@
+ALTER TABLE "return_versions" ADD COLUMN "elections" jsonb DEFAULT '{}'::jsonb NOT NULL;

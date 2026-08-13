@@ -2,7 +2,7 @@ import type { Change, GirDocument } from "@globe/engine";
 import { diffDocuments, parseGir, serializeGir } from "@globe/engine";
 import { and, asc, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/db/client";
-import { returnVersions } from "@/db/schema";
+import { returnVersions, type VersionElections } from "@/db/schema";
 import { ApiError, notFound } from "@/lib/error";
 import { requireReturn, touchReturn } from "./return-service";
 
@@ -39,7 +39,12 @@ const MAX_VERSION_ATTEMPTS = 25;
  * collision, so an empty result is the signal to try again rather than an error to
  * report.
  */
-export const createVersion = async (returnId: string, userId: string, document: StoredDocument) => {
+export const createVersion = async (
+  returnId: string,
+  userId: string,
+  document: StoredDocument,
+  elections: VersionElections = {},
+) => {
   await requireReturn(returnId, userId);
 
   for (let attempt = 0; attempt < MAX_VERSION_ATTEMPTS; attempt += 1) {
@@ -53,6 +58,7 @@ export const createVersion = async (returnId: string, userId: string, document: 
           where ${returnVersions.returnId} = ${returnId}
         )`,
         document,
+        elections,
       })
       .onConflictDoNothing({ target: [returnVersions.returnId, returnVersions.version] })
       .returning({
@@ -99,6 +105,7 @@ export const findVersion = async (returnId: string, userId: string, version: num
       id: returnVersions.id,
       version: returnVersions.version,
       document: returnVersions.document,
+      elections: returnVersions.elections,
       xml: returnVersions.xml,
       createdAt: returnVersions.createdAt,
     })
@@ -124,6 +131,7 @@ export const latestVersion = async (returnId: string, userId: string) => {
       id: returnVersions.id,
       version: returnVersions.version,
       document: returnVersions.document,
+      elections: returnVersions.elections,
       xml: returnVersions.xml,
       createdAt: returnVersions.createdAt,
     })

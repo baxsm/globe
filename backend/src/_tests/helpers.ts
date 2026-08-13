@@ -83,6 +83,7 @@ export const json = async <T>(response: Response): Promise<T> => (await response
 export const returnWithVersion = async (
   session: Session,
   document: string,
+  elections?: Body,
 ): Promise<{ returnId: string; version: number }> => {
   const created = await json<{ return: { id: string } }>(
     await asUser(session, "/api/returns", {
@@ -94,7 +95,7 @@ export const returnWithVersion = async (
   const saved = await json<{ version: { version: number } }>(
     await asUser(session, `/api/returns/${created.return.id}/versions`, {
       method: "POST",
-      body: { document },
+      body: elections === undefined ? { document } : { document, elections },
     }),
   );
 
