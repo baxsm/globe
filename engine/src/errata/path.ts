@@ -20,9 +20,14 @@ export const localName = (name: string): string => {
 };
 
 /**
- * The guidance's own casing is inconsistent: it writes `GloBEBody`, `GlobeBody` and
- * `GLOBEBody` for the same element, and `GloBETax` for `GLOBETax`. Matching is therefore
- * case-insensitive, so a path copied out of the PDF still finds its target.
+ * Casing is unreliable on both sides, so matching ignores it.
+ *
+ * The guidance writes `GloBEBody`, `GlobeBody` and `GLOBEBody` for one element and
+ * `GloBETax`, `GlobeTax` and `GLOBETax` for another. The schema is no better: the
+ * element is `GLoBETax` while the type it resolves to is `GLOBETax`, so a path written
+ * from the type name misses the element it names. Case-insensitive matching means a path
+ * copied out of the PDF still finds its target; `schema/paths.ts` is what catches a path
+ * that names nothing at all.
  */
 const segmentsMatch = (a: string, b: string): boolean =>
   localName(a).toLowerCase() === localName(b).toLowerCase();

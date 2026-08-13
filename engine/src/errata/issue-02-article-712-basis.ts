@@ -24,13 +24,13 @@ import type { Application, Rule, RuleResult } from "./types";
  */
 
 const BASIS_PATH =
-  "GLOBEBody/JurisdictionSection/GLOBETax/ETR/ETRStatus/ETRComputation/CEComputation/AdjustedFANIL/Adjustment/UPEAdjustments/Basis";
+  "GLOBEBody/JurisdictionSection/GLoBETax/ETR/ETRStatus/ETRComputation/CEComputation/AdjustedFANIL/Adjustment/UPEAdjustments/Basis";
 
 const REDUCTIONS_AMOUNT_PATH =
-  "GLOBEBody/JurisdictionSection/GLOBETax/ETR/ETRStatus/ETRComputation/CEComputation/AdjustedFANIL/Adjustment/UPEAdjustments/Reductions/Amount";
+  "GLOBEBody/JurisdictionSection/GLoBETax/ETR/ETRStatus/ETRComputation/CEComputation/AdjustedFANIL/Adjustment/UPEAdjustments/Reductions/Amount";
 
 const REDUCTIONS_EXCEPTION_PATH =
-  "GLOBEBody/JurisdictionSection/GLOBETax/ETR/ETRStatus/ETRComputation/CEComputation/AdjustedFANIL/Adjustment/UPEAdjustments/Reductions/Exception";
+  "GLOBEBody/JurisdictionSection/GLoBETax/ETR/ETRStatus/ETRComputation/CEComputation/AdjustedFANIL/Adjustment/UPEAdjustments/Reductions/Exception";
 
 const DATA_POINT_PATH = "GLOBEBody/JurisdictionSection/AdditionalDataPoint";
 

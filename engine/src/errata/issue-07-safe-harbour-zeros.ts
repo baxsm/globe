@@ -23,7 +23,7 @@ import type { Application, RuleResult } from "./types";
  */
 
 const OVERALL_COMPUTATION_PATH =
-  "GLOBEBody/JurisdictionSection/GLOBETax/ETR/ETRStatus/ETRComputation/OverallComputation";
+  "GLOBEBody/JurisdictionSection/GLoBETax/ETR/ETRStatus/ETRComputation/OverallComputation";
 
 /** The nine named at paragraph 22, in the order the guidance lists them. */
 export const SAFE_HARBOUR_ZERO_ELEMENTS: readonly string[] = [

@@ -25,8 +25,8 @@ import type { Application, RuleResult } from "./types";
 
 /** Percentage-typed elements that a computation can push out of range. */
 const PERCENTAGE_PATHS: readonly string[] = [
-  "GLOBEBody/JurisdictionSection/GLOBETax/ETR/ETRStatus/ETRComputation/OverallComputation/ETRRate",
-  "GLOBEBody/JurisdictionSection/GLOBETax/ETR/ETRStatus/ETRComputation/OverallComputation/TopUpTaxPercentage",
+  "GLOBEBody/JurisdictionSection/GLoBETax/ETR/ETRStatus/ETRComputation/OverallComputation/ETRRate",
+  "GLOBEBody/JurisdictionSection/GLoBETax/ETR/ETRStatus/ETRComputation/OverallComputation/TopUpTaxPercentage",
 ];
 
 const isNumeric = (value: string): boolean => /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/.test(value);

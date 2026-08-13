@@ -17,8 +17,18 @@ import type { Application, RuleResult } from "./types";
  * still validates.
  */
 
-const REDUNDANT_PATH = "LowTaxJurisdiction/UTPR/UTPRSafeHarbour";
-const CANONICAL_PATH = "JurisdictionSection/ETR/ETRStatus/ETRException/UTPRSafeHarbour";
+/**
+ * Both paths are absolute, from inside the root element.
+ *
+ * `findByPath` matches from the root down, so a fragment like
+ * `LowTaxJurisdiction/UTPR/UTPRSafeHarbour` matches only where that element is a direct
+ * child of `GLOBE_OECD`, which it never is in a real filing. The rule then does nothing
+ * and reports nothing, which is indistinguishable from a document that had no target.
+ * `schema/paths.ts` is what catches this now.
+ */
+const REDUNDANT_PATH = "GLOBEBody/JurisdictionSection/LowTaxJurisdiction/UTPR/UTPRSafeHarbour";
+const CANONICAL_PATH =
+  "GLOBEBody/JurisdictionSection/GLoBETax/ETR/ETRStatus/ETRException/UTPRSafeHarbour";
 
 export const applyIssue12 = (document: GirDocument): RuleResult => {
   const redundant = findByPath(document.root, REDUNDANT_PATH);

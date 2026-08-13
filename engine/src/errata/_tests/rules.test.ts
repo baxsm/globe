@@ -258,46 +258,66 @@ describe("issue 7, safe harbour zeros", () => {
 });
 
 describe("issue 12, the redundant UTPR safe harbour", () => {
-  const body = `<globe:LowTaxJurisdiction><globe:UTPR>
-    <globe:UTPRSafeHarbour>GIR701</globe:UTPRSafeHarbour>
-  </globe:UTPR></globe:LowTaxJurisdiction>`;
+  // Nested where the schema puts it. A fragment rooted at LowTaxJurisdiction matches
+  // nothing in a real filing, and a rule that matches nothing reports nothing, which
+  // reads exactly like a document with no target.
+  const UTPR_PATH = "GLOBEBody/JurisdictionSection/LowTaxJurisdiction/UTPR/UTPRSafeHarbour";
+
+  const jurisdiction = (safeHarbour: string): string =>
+    `<globe:GLOBEBody><globe:JurisdictionSection><globe:LowTaxJurisdiction><globe:UTPR>
+    ${safeHarbour}
+  </globe:UTPR></globe:LowTaxJurisdiction></globe:JurisdictionSection></globe:GLOBEBody>`;
 
   it("blanks the redundant element", () => {
-    const result = applyIssue12(parse(body));
+    const result = applyIssue12(
+      parse(jurisdiction("<globe:UTPRSafeHarbour>GIR701</globe:UTPRSafeHarbour>")),
+    );
 
-    expect(textAt(result.document, "LowTaxJurisdiction/UTPR/UTPRSafeHarbour")).toEqual([""]);
+    expect(textAt(result.document, UTPR_PATH)).toEqual([""]);
     expect(result.applications[0]?.paragraph).toBe("36");
   });
 
   it("leaves an already blank element alone", () => {
-    const empty =
-      "<globe:LowTaxJurisdiction><globe:UTPR><globe:UTPRSafeHarbour/></globe:UTPR></globe:LowTaxJurisdiction>";
+    const result = applyIssue12(parse(jurisdiction("<globe:UTPRSafeHarbour/>")));
 
-    expect(applyIssue12(parse(empty)).applications).toEqual([]);
+    expect(result.applications).toEqual([]);
+  });
+
+  it("does not fire on a fragment that is not rooted at the document root", () => {
+    const loose =
+      "<globe:LowTaxJurisdiction><globe:UTPR><globe:UTPRSafeHarbour>GIR701</globe:UTPRSafeHarbour></globe:UTPR></globe:LowTaxJurisdiction>";
+
+    expect(applyIssue12(parse(loose)).applications).toEqual([]);
   });
 });
 
 describe("issue 13, the misplaced Recast", () => {
-  const withRecast = `<globe:DeferTaxAdjustAmt><globe:Adjustment>
-    <globe:AdjustmentItem>GIR2501</globe:AdjustmentItem>
-    <globe:Amount>4200</globe:Amount>
-    <globe:Recast>yes</globe:Recast>
-  </globe:Adjustment></globe:DeferTaxAdjustAmt>`;
+  // Only the CEComputation branch has a Recast under Adjustment. The sibling under
+  // OverallComputation spells the element Adjustments and has no Recast child, so a
+  // rule that matched on the bare fragment would have been addressing neither.
+  const ADJUSTMENT =
+    "GLOBEBody/JurisdictionSection/GLoBETax/ETR/ETRStatus/ETRComputation/CEComputation/AdjustedCoveredTax/DeferTaxAdjustAmt/Adjustment";
 
-  const withoutRecast = `<globe:DeferTaxAdjustAmt><globe:Adjustment>
-    <globe:AdjustmentItem>GIR2501</globe:AdjustmentItem>
-    <globe:Amount>4200</globe:Amount>
-  </globe:Adjustment></globe:DeferTaxAdjustAmt>`;
+  const adjustment = (extra: string): string =>
+    `<globe:GLOBEBody><globe:JurisdictionSection><globe:GLoBETax><globe:ETR><globe:ETRStatus>
+      <globe:ETRComputation><globe:CEComputation><globe:AdjustedCoveredTax>
+      <globe:DeferTaxAdjustAmt><globe:Adjustment>
+        <globe:AdjustmentItem>GIR2501</globe:AdjustmentItem>
+        <globe:Amount>4200</globe:Amount>${extra}
+      </globe:Adjustment></globe:DeferTaxAdjustAmt>
+      </globe:AdjustedCoveredTax></globe:CEComputation></globe:ETRComputation>
+    </globe:ETRStatus></globe:ETR></globe:GLoBETax></globe:JurisdictionSection></globe:GLOBEBody>`;
+
+  const withRecast = adjustment("<globe:Recast>yes</globe:Recast>");
+  const withoutRecast = adjustment("");
 
   it("writes the dummy item and a zero amount", () => {
     const result = applyIssue13(parse(withRecast));
 
-    expect(textAt(result.document, "DeferTaxAdjustAmt/Adjustment/AdjustmentItem")).toEqual([
+    expect(textAt(result.document, `${ADJUSTMENT}/AdjustmentItem`)).toEqual([
       RECAST_DUMMY_ADJUSTMENT_ITEM,
     ]);
-    expect(textAt(result.document, "DeferTaxAdjustAmt/Adjustment/Amount")).toEqual([
-      RECAST_DUMMY_AMOUNT,
-    ]);
+    expect(textAt(result.document, `${ADJUSTMENT}/Amount`)).toEqual([RECAST_DUMMY_AMOUNT]);
   });
 
   // Without the Recast these are a real adjustment. Overwriting them would replace a

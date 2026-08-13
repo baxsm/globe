@@ -17,7 +17,7 @@ const ADJ_COVERED_TAX_DIFFERENCE_PATH =
   "GLOBEBody/JurisdictionSection/JurWithTaxingRights/ReportDifference/AdjCoveredTaxDifference";
 
 const ADJUSTED_INCOME_TAX_TOTAL_PATH =
-  "GLOBEBody/JurisdictionSection/GLOBETax/ETR/ETRStatus/ETRComputation/CEComputation/AdjustedIncomeTax/Total";
+  "GLOBEBody/JurisdictionSection/GLoBETax/ETR/ETRStatus/ETRComputation/CEComputation/AdjustedIncomeTax/Total";
 
 /**
  * The four sub-elements that stand in for the missing sum.

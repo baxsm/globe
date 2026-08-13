@@ -20,7 +20,16 @@ import type { Application, RuleResult } from "./types";
  * because it parses, and the zero is chosen because the amount is meaningless.
  */
 
-const ADJUSTMENT_PATH = "DeferTaxAdjustAmt/Adjustment";
+/**
+ * Absolute, from inside the root element, and it names the one branch that has a Recast.
+ *
+ * `findByPath` matches from the root down, so the fragment `DeferTaxAdjustAmt/Adjustment`
+ * matched nothing in a real filing and the rule silently did not run. The sibling branch
+ * under `OverallComputation` spells the element `Adjustments` and has no `Recast` child,
+ * so this is the only place the dummy belongs.
+ */
+const ADJUSTMENT_PATH =
+  "GLOBEBody/JurisdictionSection/GLoBETax/ETR/ETRStatus/ETRComputation/CEComputation/AdjustedCoveredTax/DeferTaxAdjustAmt/Adjustment";
 
 /** Dummy value fixed by paragraph 38. Its label does not describe a Recast. */
 export const RECAST_DUMMY_ADJUSTMENT_ITEM = "GIR2516";

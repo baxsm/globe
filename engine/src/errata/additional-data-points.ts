@@ -28,10 +28,10 @@ export const ADT2_DESCRIPTION = "ADT2 EquityGain";
 /** Issue 6, paragraph 19. The Unclaimed Accrual Annual Election. */
 export const ADT3_DESCRIPTION = "ADT3 Art4.4.7";
 
-const ISSUE_4_RELATED_PATH = "GLOBEBody/JurisdictionSection/GLOBETax/ETR/Election/Art3.2.1.c";
+const ISSUE_4_RELATED_PATH = "GLOBEBody/JurisdictionSection/GLoBETax/ETR/Election/Art3.2.1.c";
 
 const ISSUE_6_RELATED_PATH =
-  "GLOBEBody/JurisdictionSection/GLOBETax/ETR/ETRStatus/ETRComputation/CEComputation/Elections/Art4.4.7";
+  "GLOBEBody/JurisdictionSection/GLoBETax/ETR/ETRStatus/ETRComputation/CEComputation/Elections/Art4.4.7";
 
 const text = (value: string): GirNode => ({ kind: "text", value });
 
