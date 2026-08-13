@@ -2,7 +2,7 @@
 
 import { ChevronRight } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { type FC, useState } from "react";
+import { type CSSProperties, type FC, useState } from "react";
 import type { AnnotationIndex, NodeAnnotations } from "@/lib/annotations";
 import type { GirElement } from "@/lib/document";
 import {
@@ -48,6 +48,39 @@ const INDENT_REM = 0.875;
 // margin at a different offset and the column comes apart down the page.
 export const NODE_GRID = "grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_18rem]";
 
+/**
+ * A row carries no rule of its own.
+ *
+ * Several hundred rows each drawing a full-width border turns a document into a
+ * spreadsheet, and against that many lines nothing else on the page can register as
+ * structure. Hierarchy comes from the indent guide, which is what a horizontal rule
+ * never provided; tracking comes from hover, which costs nothing when nobody is
+ * pointing at the row.
+ */
+const ROW = "items-start gap-x-8";
+
+/**
+ * One faint vertical line per ancestor level, drawn as a repeating gradient.
+ *
+ * A guide per level would mean a nested wrapper per level, and the padding on this row
+ * already carries the indent, so the lines are painted into the row's own background
+ * instead. They sit half an indent left of the text, where a chevron would be.
+ *
+ * Kept far fainter than any real border: at depth six, six full-strength lines would be
+ * the crosshatch the row rules were removed to escape.
+ */
+const guides = (depth: number): CSSProperties => {
+  if (depth === 0) return {};
+
+  const step = `${INDENT_REM}rem`;
+  return {
+    backgroundImage: `repeating-linear-gradient(to right, var(--color-guide) 0 1px, transparent 1px ${step})`,
+    backgroundSize: `calc(${depth} * ${step}) 100%`,
+    backgroundRepeat: "no-repeat",
+    backgroundPosition: `${INDENT_REM / 2}rem 0`,
+  };
+};
+
 const DocumentNode: FC<DocumentNodeProps> = ({
   element,
   depth,
@@ -71,22 +104,19 @@ const DocumentNode: FC<DocumentNodeProps> = ({
 
   if (children.length === 0) {
     return (
-      <div
-        className={cn(NODE_GRID, "items-start gap-x-8 border-border/60 border-b")}
-        data-path={path}
-      >
+      <div className={cn(NODE_GRID, ROW)} data-path={path}>
         {/*
-          No hover background: a leaf has nothing to open and nothing to press. Tinting
-          it under the cursor promises an action that does not exist, and next to the
-          containers, which do respond, it made the whole tree ambiguous about what was
-          clickable.
+          A leaf tracks under the cursor but does not look pressable: the tint is half
+          the strength a container's is, and there is no cursor change. With no rule per
+          row, something has to hold the eye across to the value; this does that only
+          while the reader is actually pointing at the row.
         */}
         <div
           className={cn(
-            "grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-4 py-1.5 pr-2",
+            "grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-4 py-1.5 pr-2 transition-colors duration-150 hover:bg-sunk/45",
             note !== null && "bg-ink-applied/[0.035]",
           )}
-          style={{ paddingLeft: `${depth * INDENT_REM + 1.5}rem` }}
+          style={{ paddingLeft: `${depth * INDENT_REM + 1.5}rem`, ...guides(depth) }}
         >
           <span className="min-w-0 truncate font-mono text-sm text-text-muted">{name}</span>
 
@@ -102,7 +132,7 @@ const DocumentNode: FC<DocumentNodeProps> = ({
 
   return (
     <div data-path={path}>
-      <div className={cn(NODE_GRID, "items-start gap-x-8 border-border/60 border-b")}>
+      <div className={cn(NODE_GRID, ROW)}>
         <button
           aria-expanded={open}
           className={cn(
@@ -110,7 +140,7 @@ const DocumentNode: FC<DocumentNodeProps> = ({
             note !== null && "bg-ink-applied/[0.035]",
           )}
           onClick={() => setOpen((current) => !current)}
-          style={{ paddingLeft: `${depth * INDENT_REM + 0.25}rem` }}
+          style={{ paddingLeft: `${depth * INDENT_REM + 0.25}rem`, ...guides(depth) }}
           type="button"
         >
           <ChevronRight

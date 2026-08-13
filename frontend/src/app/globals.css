@@ -22,6 +22,12 @@
   --color-border: oklch(89% 0.008 85);
   --color-border-strong: oklch(79% 0.01 85);
 
+  /*
+   * The tree's indent guides. Deliberately below `border`: one appears per ancestor
+   * level, so at depth six a border-strength line would crosshatch the row.
+   */
+  --color-guide: oklch(93.5% 0.006 85);
+
   --color-text: oklch(23% 0.012 60);
   --color-text-muted: oklch(48% 0.012 65);
 

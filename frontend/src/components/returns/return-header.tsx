@@ -5,14 +5,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type FC, useState } from "react";
 import Button from "@/components/ui/button";
-import Measure, { type MeasureName } from "@/components/ui/measure";
+import Measure from "@/components/ui/measure";
 import type { ReturnRecord } from "@/lib/api";
 import { cn, formatPeriod } from "@/lib/utils";
 import SaveVersionDialog from "./save-version-dialog";
 
 interface ReturnHeaderProps {
   readonly record: ReturnRecord;
-  readonly measure?: MeasureName;
   /**
    * Opens the caller's own save dialog instead of this one.
    *
@@ -30,7 +29,7 @@ interface ReturnHeaderProps {
  * prefetch, so they have to be navigable, shareable and openable in a new tab. A
  * client-side tab widget would make three of the product's five surfaces unlinkable.
  */
-const ReturnHeader: FC<ReturnHeaderProps> = ({ record, measure = "document", onSave }) => {
+const ReturnHeader: FC<ReturnHeaderProps> = ({ record, onSave }) => {
   const pathname = usePathname();
   const [saving, setSaving] = useState(false);
 
@@ -45,7 +44,7 @@ const ReturnHeader: FC<ReturnHeaderProps> = ({ record, measure = "document", onS
 
   return (
     <header className="border-border border-b bg-surface">
-      <Measure as={measure} className="pt-8">
+      <Measure className="pt-8">
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
           <div className="flex min-w-0 flex-wrap items-baseline gap-x-6 gap-y-2">
             <h1 className="min-w-0 font-normal text-2xl tracking-[-0.015em]">{record.name}</h1>

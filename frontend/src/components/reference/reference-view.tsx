@@ -38,7 +38,7 @@ const ReferenceView: FC = () => {
   const disappliedRules = issues.filter((issue) => issue.validationRule !== null);
 
   return (
-    <Measure as="prose" className="py-10">
+    <Measure className="py-10">
       <h1 className="font-normal text-3xl tracking-[-0.015em]">Reference</h1>
 
       <p className="mt-4 max-w-prose text-lg text-text-muted leading-relaxed">

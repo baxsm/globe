@@ -100,7 +100,7 @@ const ReturnsList: FC = () => {
           */}
           {returns.map((item) => (
             <div
-              className="group grid grid-cols-[1fr_2rem] items-center border-border border-b transition-colors duration-150 hover:bg-sunk/50"
+              className="group grid grid-cols-[1fr_2rem] items-center border-border border-b transition-colors duration-150 last:border-b-0 hover:bg-sunk/50"
               key={item.id}
             >
               <Link

@@ -48,8 +48,11 @@ const Row: FC<{ jurisdiction: ComputedJurisdiction }> = ({ jurisdiction }) => {
   const { code, etrRate, topUpTax, additionalTopUpTax, breaches, roundingBreachesTolerance } =
     jurisdiction;
 
+  // Rules between rows only. This is a real multi-column table, where a rule does the
+  // horizontal tracking a two-column tree does not need, but a trailing one under the
+  // last row would sit against the end of the page as a stray line.
   return (
-    <div className="border-border/60 border-b py-3">
+    <div className="border-border border-b py-3 last:border-b-0">
       <div className="grid grid-cols-[3rem_minmax(0,1fr)] items-baseline gap-4 sm:grid-cols-[3rem_repeat(3,minmax(0,1fr))]">
         <span className="font-medium text-sm">{code ?? "--"}</span>
 

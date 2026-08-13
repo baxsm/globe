@@ -62,9 +62,14 @@ const VersionsView: FC<{ returnId: string }> = ({ returnId }) => {
               <span className="text-right">Export</span>
             </div>
 
+            {/*
+              Rules between rows, not under every one. A trailing rule under the last row
+              sits directly above whatever follows and reads as a stray line rather than
+              as the end of the list.
+            */}
             {newestFirst.map((version) => (
               <div
-                className="grid grid-cols-[4rem_1fr_auto] items-baseline gap-4 border-border border-b px-3 py-3.5"
+                className="grid grid-cols-[4rem_1fr_auto] items-baseline gap-4 border-border border-b px-3 py-3.5 last:border-b-0"
                 key={version.id}
               >
                 <span className="figure font-medium text-sm">v{version.version}</span>
@@ -87,7 +92,7 @@ const VersionsView: FC<{ returnId: string }> = ({ returnId }) => {
             ))}
 
             {pair === null ? (
-              <p className="mt-10 border-border border-t pt-4 text-sm text-text-faint leading-relaxed">
+              <p className="mt-10 text-sm text-text-faint leading-relaxed">
                 Save a second version to compare it against this one.
               </p>
             ) : (

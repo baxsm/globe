@@ -12,7 +12,7 @@ import type { GirDocument } from "@/lib/document";
 import { allPaths, childElements, childKey, localName } from "@/lib/document";
 import { queryKeys } from "@/lib/query-keys";
 import { cn } from "@/lib/utils";
-import DocumentNode, { NODE_GRID } from "./document-node";
+import DocumentNode from "./document-node";
 import JurisdictionFigures from "./jurisdiction-figures";
 import { ErrataNote, SuppressionNote } from "./margin-note";
 import ReturnHeader from "./return-header";
@@ -95,36 +95,38 @@ const ReturnDocument: FC<{ returnId: string }> = ({ returnId }) => {
       <ReturnHeader record={data.return} />
 
       <Measure className="py-8">
-        <div className={`${NODE_GRID} gap-x-8`}>
-          <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 border-border border-b pb-2">
-            <span className="font-mono text-micro text-text-faint uppercase tracking-[0.14em]">
-              Document
-            </span>
-            <span className="font-mono text-text-faint text-xs">{localName(root.name)}</span>
-            <span className="figure ml-auto text-text-faint text-xs">v{version}</span>
-          </div>
+        {/*
+          One rule across the page, not one per column. The suppressions directly beneath
+          span the full width, so splitting this into "Document" and "Margin" halves drew
+          a header for two columns that do not begin until the tree further down, and left
+          the right-hand rule sitting over nothing.
 
-          <div className="hidden items-baseline justify-between border-border border-b pb-2 lg:flex">
-            <span className="font-mono text-micro text-text-faint uppercase tracking-[0.14em]">
-              Margin
-            </span>
+          No bottom border here either: whatever follows opens with its own rule, and two
+          of them 24px apart read as a mistake rather than as a division.
+        */}
+        <div className="flex h-11 flex-wrap items-center gap-x-3">
+          <span className="font-mono text-micro text-text-faint uppercase tracking-[0.14em]">
+            Document
+          </span>
+          <span className="font-mono text-text-faint text-xs">{localName(root.name)}</span>
+          <span className="figure text-text-faint text-xs">v{version}</span>
 
-            {validation.run !== null && (
-              <Button
-                disabled={isPending}
-                onClick={() => revalidate()}
-                size="sm"
-                variant="secondary"
-              >
-                <RefreshCw
-                  aria-hidden="true"
-                  className={cn("size-3.5", isPending && "animate-spin")}
-                  strokeWidth={1.75}
-                />
-                {isPending ? "Running" : "Re-run"}
-              </Button>
-            )}
-          </div>
+          {validation.run !== null && (
+            <Button
+              className="ml-auto"
+              disabled={isPending}
+              onClick={() => revalidate()}
+              size="sm"
+              variant="secondary"
+            >
+              <RefreshCw
+                aria-hidden="true"
+                className={cn("size-3.5", isPending && "animate-spin")}
+                strokeWidth={1.75}
+              />
+              {isPending ? "Running" : "Re-run"}
+            </Button>
+          )}
         </div>
 
         {validation.run === null ? (
