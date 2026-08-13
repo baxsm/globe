@@ -26,6 +26,39 @@ export {
 } from "./calc/top-up-tax";
 export type { Breach, Computed, JurisdictionInput } from "./calc/types";
 export { isReportable } from "./calc/types";
+export {
+  ADT2_DESCRIPTION,
+  ADT3_DESCRIPTION,
+  applyIssue4,
+  applyIssue6,
+} from "./errata/additional-data-points";
+export { applyIssue1, applyIssue5 } from "./errata/definitional";
+export {
+  ADT1_DESCRIPTION,
+  ARTICLE_712_SUBSTITUTE,
+  applyIssue2,
+} from "./errata/issue-02-article-712-basis";
+export { applyIssue3 } from "./errata/issue-03-utpr-attribution";
+export { applyIssue7, SAFE_HARBOUR_ZERO_ELEMENTS } from "./errata/issue-07-safe-harbour-zeros";
+export { applyIssue12 } from "./errata/issue-12-utpr-safe-harbour";
+export {
+  applyIssue13,
+  RECAST_DUMMY_ADJUSTMENT_ITEM,
+  RECAST_DUMMY_AMOUNT,
+} from "./errata/issue-13-recast-dummy";
+export { applyIssue14 } from "./errata/issue-14-percentage-clamp";
+export { findByPath, findOneByPath, localName } from "./errata/path";
+export type { ErrataContext, ErrataResult } from "./errata/registry";
+export { applyErrata, defaultContext, KNOWN_ISSUES } from "./errata/registry";
+export { suppressedValidationRules, suppressionRules } from "./errata/suppressions";
+export type {
+  Application,
+  FixKind,
+  IssueNumber,
+  Rule,
+  RuleContext,
+  Suppression,
+} from "./errata/types";
 export type { XsdValidationError, XsdValidationResult } from "./schema/validate-xsd";
 export { validateFileAgainstXsd } from "./schema/validate-xsd";
 export { parseGir } from "./serialize/parse";
