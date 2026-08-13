@@ -1,5 +1,6 @@
 import type { GirDocument, GirElement, GirNode } from "../serialize/types";
-import { appendChildrenAt, findByPath } from "./path";
+import { isElement } from "../serialize/types";
+import { findByPath, localName, replaceAt } from "./path";
 import type { Application, IssueNumber, RuleResult } from "./types";
 
 /**
@@ -71,17 +72,44 @@ const buildDataPoint = (prefix: string, spec: DataPointSpec): GirElement => {
   return element(`${prefix}AdditionalDataPoint`, children);
 };
 
+/**
+ * Inserts the data point before `DocSpec` rather than at the end.
+ *
+ * `AdditionalDataPoint` is the last element of `JurisdictionSectionType` and `DocSpec` is
+ * appended after it by the extension in `GLOBEBody_Type`. Appending to the end therefore
+ * lands the data point after `DocSpec`, out of sequence, and libxml2 rejects the result.
+ * A rule whose whole purpose is to carry data the schema has no room for must not produce
+ * a document the schema refuses.
+ */
+const insertBeforeDocSpec = (parent: GirElement, addition: GirElement): GirElement => {
+  const at = parent.children.findIndex(
+    (child) => isElement(child) && localName(child.name) === "DocSpec",
+  );
+
+  if (at === -1) return { ...parent, children: [...parent.children, addition] };
+
+  const children = [...parent.children];
+  children.splice(at, 0, addition);
+  return { ...parent, children };
+};
+
 const appendDataPoint = (document: GirDocument, spec: DataPointSpec): RuleResult => {
   const parent = findByPath(document.root, DATA_POINT_PARENT_PATH)[0];
   if (parent === undefined) return { document, applications: [], suppressions: [] };
 
   const prefix = prefixOf(parent.element.name);
-  const root = appendChildrenAt(document.root, parent.indices, [buildDataPoint(prefix, spec)]);
+  const root = replaceAt(
+    document.root,
+    parent.indices,
+    insertBeforeDocSpec(parent.element, buildDataPoint(prefix, spec)),
+  );
 
   const application: Application = {
     issue: spec.issue,
     kind: "augmentation",
-    path: `${DATA_POINT_PARENT_PATH}/AdditionalDataPoint`,
+    // The located path, not the query. Every other rule reports where it acted, and the
+    // margin aligns an annotation by that address.
+    path: `${parent.path}/${prefix}AdditionalDataPoint`,
     schemaExpected: spec.schemaExpected,
     errataApplied: `AdditionalDataPoint with Description "${spec.description}"${
       spec.amount === undefined ? "" : `, Amount ${spec.amount}`

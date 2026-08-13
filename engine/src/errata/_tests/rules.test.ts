@@ -329,6 +329,31 @@ describe("issue 13, the misplaced Recast", () => {
     expect(serializeGir(result.document)).toBe(serializeGir(document));
     expect(result.applications).toEqual([]);
   });
+
+  // `Adjustment` is an xsd:sequence of Amount, AdjustmentItem, Recast. Inserting either
+  // missing child at the end puts it after the Recast and the document stops validating,
+  // which defeats the point of a rule that exists to make a Recast filable. The earlier
+  // cases all supply both children, so only this one pins the order.
+  it("inserts the missing children in the order the sequence requires", () => {
+    const bare = `<globe:GLOBEBody><globe:JurisdictionSection><globe:GLoBETax><globe:ETR><globe:ETRStatus>
+      <globe:ETRComputation><globe:CEComputation><globe:AdjustedCoveredTax>
+      <globe:DeferTaxAdjustAmt><globe:Adjustment>
+        <globe:Recast><globe:Higher>5</globe:Higher></globe:Recast>
+      </globe:Adjustment></globe:DeferTaxAdjustAmt>
+      </globe:AdjustedCoveredTax></globe:CEComputation></globe:ETRComputation>
+    </globe:ETRStatus></globe:ETR></globe:GLoBETax></globe:JurisdictionSection></globe:GLOBEBody>`;
+
+    const result = applyIssue13(parse(bare));
+    const serialized = serializeGir(result.document);
+
+    expect(result.applications).toHaveLength(1);
+    expect(serialized.indexOf("<globe:Amount>")).toBeLessThan(
+      serialized.indexOf("<globe:AdjustmentItem>"),
+    );
+    expect(serialized.indexOf("<globe:AdjustmentItem>")).toBeLessThan(
+      serialized.indexOf("<globe:Recast>"),
+    );
+  });
 });
 
 describe("issue 14, percentages outside the interval", () => {

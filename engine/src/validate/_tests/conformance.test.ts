@@ -26,6 +26,7 @@ const FIXTURES = [
   "disapplied-60026-gir",
   "disapplied-70092-gir",
   "disapplied-70028-gir",
+  "rich-gir",
 ] as const;
 
 const path = (name: string) =>

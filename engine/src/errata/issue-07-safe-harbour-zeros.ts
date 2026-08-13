@@ -46,6 +46,32 @@ export interface Issue7Context {
 }
 
 /**
+ * Writes the zero where the figure actually lives.
+ *
+ * Two of the nine are containers, not leaves. `NetGlobeIncome` wraps a required `Total`
+ * and `ExcessNegTaxExpense` wraps four integers, and both are declared element-only, so
+ * replacing their children with the text `0` produces a document libxml2 rejects. The
+ * guidance asks for the reported figure to be zero, and for a container that means every
+ * numeric leaf beneath it rather than the container's own text.
+ */
+const zeroed = (element: GirElement): GirElement => {
+  const children = element.children.filter(isElement);
+  if (children.length === 0) return { ...element, children: [{ kind: "text", value: ZERO }] };
+
+  return {
+    ...element,
+    children: element.children.map((child) => (isElement(child) ? zeroed(child) : child)),
+  };
+};
+
+/** True when the element or anything beneath it already reads as zero throughout. */
+const isAllZero = (element: GirElement): boolean => {
+  const children = element.children.filter(isElement);
+  if (children.length === 0) return rawText(element).trim() === ZERO;
+  return children.every(isAllZero);
+};
+
+/**
  * Fires only under a safe harbour.
  *
  * Outside one, `OverallComputation`'s children are real figures. Zeroing them would
@@ -64,9 +90,9 @@ export const applyIssue7 = (document: GirDocument, context: Issue7Context): Rule
       if (!isElement(child)) return child;
       if (!SAFE_HARBOUR_ZERO_ELEMENTS.includes(localName(child.name))) return child;
       // Already zero, so there is nothing to coerce and nothing to report.
-      if (rawText(child) === ZERO) return child;
+      if (isAllZero(child)) return child;
 
-      const replaced: GirElement = { ...child, children: [{ kind: "text", value: ZERO }] };
+      const replaced = zeroed(child);
 
       applications.push({
         issue: 7,

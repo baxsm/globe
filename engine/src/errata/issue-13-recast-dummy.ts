@@ -85,11 +85,15 @@ export const applyIssue13 = (document: GirDocument): RuleResult => {
       return child;
     });
 
+    // Both are inserted at the front, Amount first, because `Adjustment` is an
+    // `xsd:sequence` of Amount, AdjustmentItem, Recast. Appending either one instead
+    // puts it after the Recast and the document stops validating, which is a worse
+    // outcome than not applying the fix at all.
     if (existingItem === undefined) {
       children.unshift(element(`${prefix}AdjustmentItem`, RECAST_DUMMY_ADJUSTMENT_ITEM));
     }
     if (existingAmount === undefined) {
-      children.push(element(`${prefix}Amount`, RECAST_DUMMY_AMOUNT));
+      children.unshift(element(`${prefix}Amount`, RECAST_DUMMY_AMOUNT));
     }
 
     root = replaceAt(root, adjustment.indices, { ...adjustment.element, children });
