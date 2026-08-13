@@ -12,6 +12,8 @@ export {
   percentageBreaches,
 } from "./calc/etr";
 export { computeJurisdiction } from "./calc/jurisdiction";
+export type { JurisdictionReading } from "./calc/read-jurisdictions";
+export { readJurisdictions } from "./calc/read-jurisdictions";
 export type {
   JurisdictionComputation,
   ToleranceCheck,
@@ -26,6 +28,8 @@ export {
 } from "./calc/top-up-tax";
 export type { Breach, Computed, JurisdictionInput } from "./calc/types";
 export { isReportable } from "./calc/types";
+export { diffDocuments } from "./diff/diff";
+export type { Change, ChangeKind } from "./diff/types";
 export {
   ADT2_DESCRIPTION,
   ADT3_DESCRIPTION,
