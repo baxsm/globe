@@ -39,7 +39,7 @@ jobs:
         run: bun run typecheck
 
       - name: Lint
-        run: bunx --bun @biomejs/biome check ../engine/src ../engine/vitest.config.ts
+        run: bunx --bun @biomejs/biome check src scripts vitest.config.ts
 
       - name: Test
         run: bun run test
