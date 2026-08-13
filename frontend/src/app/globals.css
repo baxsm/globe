@@ -12,10 +12,8 @@
 /*
  * One token block. Every colour, size and face is named exactly once here.
  *
- * The palette is paper, not panel: a warm off-white ground with near-black text and an
- * ink set borrowed from proof marking. It is light-only by decision, not by omission.
- * There is no `prefers-color-scheme` rule anywhere in this project, and adding one
- * would contradict the surface it is imitating.
+ * Light-only by decision, not omission: there is no `prefers-color-scheme` rule in this
+ * project, and adding one would contradict the paper surface it imitates.
  */
 @theme {
   --color-ground: oklch(98.4% 0.005 85);
@@ -26,20 +24,27 @@
 
   --color-text: oklch(23% 0.012 60);
   --color-text-muted: oklch(48% 0.012 65);
-  --color-text-faint: oklch(64% 0.011 70);
+
+  /* Carries the small print at 11px, so it has to clear AA: 4.6:1 on the ground. */
+  --color-text-faint: oklch(55% 0.011 70);
 
   /*
-   * The three ink roles the margin is built from.
-   *
-   * They must stay tellable apart at body size on a white ground, not only when
-   * enlarged. Struck is the muted red of a deletion, applied the blue-black of the
-   * correction written beside it, suppressed the amber of a rule struck from the sheet.
-   * The hues are far enough apart to survive the most common colour vision deficiency,
-   * where red and green collapse but blue and amber do not.
+   * The three ink roles the margin is built from: a deletion's red, the blue-black of
+   * the correction written beside it, the amber of a rule struck from the sheet. Far
+   * enough apart in hue to survive red-green colour vision deficiency.
    */
   --color-ink-struck: oklch(50% 0.16 25);
   --color-ink-applied: oklch(42% 0.13 255);
   --color-ink-suppressed: oklch(52% 0.12 75);
+
+  /*
+   * `bg-ink-applied/[0.06]` resolved against the surface. The pinned line-number column
+   * needs an opaque ground, so the two must be changed together.
+   */
+  --color-marked-line: oklch(97.6% 0.008 255);
+
+  /* The same pairing, for the line the correction stepper is on. */
+  --color-marked-line-current: oklch(94.6% 0.019 255);
 
   --color-pos: oklch(46% 0.11 155);
   --color-neg: oklch(50% 0.16 25);
@@ -53,22 +58,14 @@
   --radius-sheet: 2px;
 
   /*
-   * Named rather than written inline at each call site.
-   *
-   * An arbitrary `shadow-[...]` carrying a nested `oklch()` does not survive Tailwind's
-   * bracket parsing: the class is emitted, the declaration is dropped, and the element
-   * renders with no shadow at all while the markup still says it has one. As a token it
-   * is one definition that either works everywhere or fails visibly everywhere.
+   * A token, not an inline `shadow-[...]`: a nested `oklch()` does not survive Tailwind's
+   * bracket parsing, and the class is emitted with the declaration silently dropped.
    */
   --shadow-sheet: 0 16px 48px -12px oklch(23% 0.012 60 / 0.18);
 
   /*
-   * Overlay motion, as utilities rather than per-component classes.
-   *
-   * Radix drives `data-[state]` on the overlay and content, so the animation belongs to
-   * the token layer where every dialog and the command palette read the same pair.
-   * Short and eased-out: an overlay that takes longer than about 150ms reads as lag
-   * rather than as motion.
+   * Overlay motion as tokens, since Radix drives `data-[state]` and every dialog reads
+   * the same pair. Past about 150ms an overlay reads as lag rather than motion.
    */
   --animate-overlay-in: overlay-in 0.15s ease-out;
   --animate-overlay-out: overlay-out 0.12s ease-in;
@@ -76,6 +73,19 @@
   --animate-sheet-out: sheet-out 0.12s ease-in;
   --animate-palette-in: palette-in 0.18s cubic-bezier(0.22, 1, 0.36, 1);
   --animate-palette-out: palette-out 0.12s ease-in;
+
+  /*
+   * The reveal a margin annotation uses on first paint. Four pixels and a fade: enough
+   * to read as a layer written on top of the document, not enough to notice.
+   */
+  --animate-note-in: note-in 0.24s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+@keyframes note-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
 }
 
 @keyframes overlay-in {
@@ -124,15 +134,21 @@
 }
 
 /*
- * Serif is the default face because the product is a document.
- *
- * Setting it on `body` rather than reaching for a `font-serif` class on every block is
- * what makes prose the default and mono the exception, which is the right way round
- * here.
+ * Serif on `body` rather than a class per block, so prose is the default and mono the
+ * exception. The product is a document.
  */
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+
+    /*
+     * The scrollbar gutter is always there, whether or not the page scrolls.
+     *
+     * Without it a short page has no scrollbar and a long one does, so the content
+     * measure moves sideways by the scrollbar's width on every navigation between them.
+     * That is the shift a reader notices as the page jumping.
+     */
+    scrollbar-gutter: stable;
   }
 
   body {
@@ -144,11 +160,8 @@
   }
 
   /*
-   * Every digit that sits in a column of figures is tabular.
-   *
-   * Applied to the element rather than left to a utility class: a proportional numeral
-   * in a tax figure is a legibility failure, and relying on each call site to remember
-   * the class is how one gets missed.
+   * On the element rather than a utility class: a proportional numeral in a column of
+   * tax figures is a legibility failure, and per-call-site is how one gets missed.
    */
   .figure {
     font-family: var(--font-mono);
@@ -156,9 +169,14 @@
     font-feature-settings: "tnum" 1;
   }
 
+  /*
+   * Text colour, not an accent. `ink-applied` means "the errata wrote this", so using
+   * it for focus put that blue on controls where nothing had been corrected.
+   */
   :focus-visible {
-    outline: 2px solid var(--color-ink-applied);
+    outline: 2px solid var(--color-text);
     outline-offset: 2px;
+    border-radius: 1px;
   }
 
   /*

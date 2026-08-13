@@ -23,12 +23,10 @@ import { ErrataNote, FindingNote } from "./margin-note";
  * The two are one component because a GIR nests to eight or nine levels and which of them
  * is a leaf depends on the filing, not on the level.
  *
- * **The annotation is a cell in the same grid row as its node, not an absolutely
- * positioned overlay.** That is the whole defence against the failure this surface is most
- * likely to have: a margin note that drifts from the element it describes. Measuring node
- * offsets and positioning notes against them re-derives on every scroll and resize, and
- * gets it subtly wrong rather than visibly wrong. As a grid row the alignment is a layout
- * invariant, so there is no state that can disagree with what is on screen.
+ * The annotation is a cell in the same grid row as its node, never an absolutely
+ * positioned overlay. Alignment is then a layout invariant rather than something
+ * re-derived on each scroll and resize, which is how a margin note drifts off the
+ * element it describes.
  */
 interface DocumentNodeProps {
   readonly element: GirElement;
@@ -38,30 +36,16 @@ interface DocumentNodeProps {
   readonly annotations: AnnotationIndex;
 }
 
-/**
- * The top two levels start open.
- *
- * A document that opens fully collapsed shows a filer four rows and hides their entire
- * return. Opening everything is the other failure: several hundred rows with no shape.
- * Two levels shows the jurisdictions without their internals.
- */
+// Two levels shows the jurisdictions without their internals. Fully collapsed hides the
+// whole return behind four rows; fully open is several hundred rows with no shape.
 const DEFAULT_OPEN_DEPTH = 2;
 
-/**
- * Indentation is padding on the row, not a nested container.
- *
- * Nesting a padded div per level compounds the inset and pushes deep nodes off the right
- * edge. A single computed inset keeps every row full width and its hover target whole.
- */
+// Padding on the row, not a nested container: nesting compounds the inset and pushes
+// deep nodes off the right edge.
 const INDENT_REM = 0.875;
 
-/**
- * The two-column measure the whole surface shares.
- *
- * Declared once here because every row has to agree about it. A row that sets its own
- * columns would put the margin at a different offset per node and the column would come
- * apart down the page.
- */
+// Declared once because every row has to agree: a row setting its own columns puts the
+// margin at a different offset and the column comes apart down the page.
 export const NODE_GRID = "grid grid-cols-[minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_18rem]";
 
 const DocumentNode: FC<DocumentNodeProps> = ({
@@ -91,9 +75,15 @@ const DocumentNode: FC<DocumentNodeProps> = ({
         className={cn(NODE_GRID, "items-start gap-x-8 border-border/60 border-b")}
         data-path={path}
       >
+        {/*
+          No hover background: a leaf has nothing to open and nothing to press. Tinting
+          it under the cursor promises an action that does not exist, and next to the
+          containers, which do respond, it made the whole tree ambiguous about what was
+          clickable.
+        */}
         <div
           className={cn(
-            "group grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-4 py-1.5 pr-2 transition-colors duration-150 hover:bg-sunk/40",
+            "grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-4 py-1.5 pr-2",
             note !== null && "bg-ink-applied/[0.035]",
           )}
           style={{ paddingLeft: `${depth * INDENT_REM + 1.5}rem` }}
@@ -116,7 +106,7 @@ const DocumentNode: FC<DocumentNodeProps> = ({
         <button
           aria-expanded={open}
           className={cn(
-            "flex w-full cursor-pointer items-baseline gap-2 py-1.5 pr-2 text-left transition-colors duration-150 hover:bg-sunk/40",
+            "group flex w-full cursor-pointer items-baseline gap-2 py-1.5 pr-2 text-left transition-colors duration-150 hover:bg-sunk",
             note !== null && "bg-ink-applied/[0.035]",
           )}
           onClick={() => setOpen((current) => !current)}
@@ -126,7 +116,7 @@ const DocumentNode: FC<DocumentNodeProps> = ({
           <ChevronRight
             aria-hidden="true"
             className={cn(
-              "size-3.5 shrink-0 translate-y-0.5 text-text-faint transition-transform",
+              "size-3.5 shrink-0 translate-y-0.5 text-text-faint transition-[transform,color] duration-200 group-hover:text-text",
               open && "rotate-90",
             )}
             strokeWidth={2}
@@ -183,17 +173,13 @@ const DocumentNode: FC<DocumentNodeProps> = ({
 };
 
 /**
- * The margin cell for one row, empty when the node carries nothing.
+ * The margin cell for one row, rendered even when empty so the grid keeps both tracks
+ * and the measure holds from row to row. Below `lg` the notes stack under their node
+ * rather than disappearing; hiding them would hide the product.
  *
- * The cell is rendered either way so the grid keeps its two tracks and the document's
- * measure does not change from row to row. Below `lg` the column collapses and the notes
- * stack under the node they belong to rather than disappearing, which is the only honest
- * answer on a narrow screen: hiding them would hide the product.
- *
- * The cell stretches its row rather than overflowing it. Taking it out of the flow with
- * `h-0` removes the gap a tall note opens in the document column, but the row border
- * below then cuts the note off mid-sentence, and a truncated explanation of why a figure
- * was changed is worse than a gap beside it. The gap is the honest trade.
+ * The cell stretches its row rather than overflowing it. Pulling it out of flow with
+ * `h-0` closes the gap a tall note opens, but the next row's border then cuts the note
+ * mid-sentence, and a truncated explanation is worse than a gap.
  */
 const Margin: FC<{ note: NodeAnnotations | null; annotations: AnnotationIndex }> = ({
   note,
@@ -202,7 +188,7 @@ const Margin: FC<{ note: NodeAnnotations | null; annotations: AnnotationIndex }>
   if (note === null) return <div aria-hidden="true" className="hidden lg:block" />;
 
   return (
-    <div className="space-y-2 py-1.5 pb-3 pl-6 lg:pl-0">
+    <div className="animate-note-in space-y-2 py-1.5 pb-3 pl-6 lg:pl-0">
       {note.errata.map((application) => (
         <ErrataNote
           application={application}

@@ -1,13 +1,17 @@
 "use client";
 
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { FileQuestion, RefreshCw } from "lucide-react";
 import { type FC, useMemo } from "react";
 import Button from "@/components/ui/button";
+import EmptyState from "@/components/ui/empty-state";
+import Measure from "@/components/ui/measure";
 import { AnnotationIndex } from "@/lib/annotations";
 import { api, type ErrataApplication, type SuppressionRecord } from "@/lib/api";
 import type { GirDocument } from "@/lib/document";
 import { allPaths, childElements, childKey, localName } from "@/lib/document";
 import { queryKeys } from "@/lib/query-keys";
+import { cn } from "@/lib/utils";
 import DocumentNode, { NODE_GRID } from "./document-node";
 import JurisdictionFigures from "./jurisdiction-figures";
 import { ErrataNote, SuppressionNote } from "./margin-note";
@@ -62,15 +66,13 @@ const ReturnDocument: FC<{ returnId: string }> = ({ returnId }) => {
     return (
       <>
         <ReturnHeader record={data.return} />
-        <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-8">
-          <div className="border-border border-t py-16 text-center">
-            <p className="text-lg text-text-muted">No document saved yet.</p>
-            <p className="mx-auto mt-2 max-w-md text-sm text-text-faint leading-relaxed">
-              Save a GIR against this return and it appears here, with each errata correction marked
-              against the element it changes.
-            </p>
-          </div>
-        </div>
+        <Measure className="py-8">
+          <EmptyState
+            icon={FileQuestion}
+            title="No document saved yet."
+            body="Save a GIR against this return and it appears here, with each errata correction marked against the element it changes."
+          />
+        </Measure>
       </>
     );
   }
@@ -83,7 +85,7 @@ const ReturnDocument: FC<{ returnId: string }> = ({ returnId }) => {
     <>
       <ReturnHeader record={data.return} />
 
-      <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-8">
+      <Measure className="py-8">
         <div className={`${NODE_GRID} gap-x-8`}>
           <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 border-border border-b pb-2">
             <span className="font-mono text-micro text-text-faint uppercase tracking-[0.14em]">
@@ -99,7 +101,17 @@ const ReturnDocument: FC<{ returnId: string }> = ({ returnId }) => {
             </span>
 
             {validation.run !== null && (
-              <Button disabled={isPending} onClick={() => revalidate()} size="sm" variant="ghost">
+              <Button
+                disabled={isPending}
+                onClick={() => revalidate()}
+                size="sm"
+                variant="secondary"
+              >
+                <RefreshCw
+                  aria-hidden="true"
+                  className={cn("size-3.5", isPending && "animate-spin")}
+                  strokeWidth={1.75}
+                />
                 {isPending ? "Running" : "Re-run"}
               </Button>
             )}
@@ -128,7 +140,7 @@ const ReturnDocument: FC<{ returnId: string }> = ({ returnId }) => {
         <Additions applications={annotations.unattached(allPaths(document))} />
 
         {jurisdictions.length > 0 && <JurisdictionFigures jurisdictions={jurisdictions} />}
-      </div>
+      </Measure>
     </>
   );
 };
@@ -154,9 +166,20 @@ const Suppressions: FC<{ records: readonly SuppressionRecord[] }> = ({ records }
         reported on every run, including this one.
       </p>
 
+      {/*
+        Staggered by index so the four arrive in sequence rather than as one block.
+        The delay is capped by the list being four long; a longer list would need it
+        clamped, and this one cannot grow because the guidance disapplies exactly four.
+      */}
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        {records.map((record) => (
-          <SuppressionNote key={record.validationRule} suppression={record} />
+        {records.map((record, index) => (
+          <div
+            className="animate-note-in"
+            key={record.validationRule}
+            style={{ animationDelay: `${index * 40}ms` }}
+          >
+            <SuppressionNote suppression={record} />
+          </div>
         ))}
       </div>
     </section>
