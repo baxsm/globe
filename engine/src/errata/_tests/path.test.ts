@@ -81,8 +81,24 @@ describe("findByPath", () => {
     const match = findOneByPath(document.root, "GLOBEBody/JurisdictionSection/GLOBETax/Amount");
 
     expect(match?.path).toBe(
-      "globe:GLOBEBody/globe:JurisdictionSection/globe:GLOBETax/globe:Amount",
+      "globe:GLOBEBody/globe:JurisdictionSection[1]/globe:GLOBETax/globe:Amount",
     );
+  });
+
+  it("gives each repeat of a section a distinct path", () => {
+    // Without the ordinal every JurisdictionSection addresses as one string, so the
+    // margin cannot tell which node an annotation belongs to and lands it on whichever
+    // matched first. That misalignment looks plausible rather than broken.
+    const found = findByPath(document.root, "GLOBEBody/JurisdictionSection/GLOBETax/Amount");
+    const paths = found.map((match) => match.path);
+
+    expect(new Set(paths).size).toBe(found.length);
+  });
+
+  it("leaves a name that occurs once unindexed", () => {
+    // `GLOBEBody[1]` would be noise. The ordinal is only meaningful where it
+    // disambiguates something.
+    expect(findOneByPath(document.root, "GLOBEBody")?.path).toBe("globe:GLOBEBody");
   });
 });
 

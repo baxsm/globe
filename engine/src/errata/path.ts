@@ -43,6 +43,40 @@ export interface Located {
   readonly path: string;
 }
 
+/**
+ * Appends a 1-based ordinal to a segment, but only where the name repeats.
+ *
+ * Without this every `JurisdictionSection` in a return addresses as the same string, so
+ * three jurisdictions produce three applications carrying one path between them. The
+ * margin aligns an annotation to a node by this path, and identical paths mean an
+ * annotation lands on whichever node matched first. That misalignment reads as plausible
+ * rather than broken, which is what makes it worth preventing here rather than papering
+ * over downstream.
+ *
+ * `MessageSpec[1]` would be noise, so a name that occurs once is left bare. The bracket
+ * form and the 1-based count are XPath's, matching `diff/diff.ts` so a path means the
+ * same thing in the margin, the diff and the stored `xpath` column.
+ */
+const indexedSegment = (
+  siblings: readonly GirNode[],
+  child: GirElement,
+  position: number,
+): string => {
+  const lowered = localName(child.name).toLowerCase();
+
+  let total = 0;
+  let ordinal = 0;
+
+  siblings.forEach((sibling, index) => {
+    if (!isElement(sibling)) return;
+    if (localName(sibling.name).toLowerCase() !== lowered) return;
+    total += 1;
+    if (index === position) ordinal = total;
+  });
+
+  return total <= 1 ? child.name : `${child.name}[${ordinal}]`;
+};
+
 const walk = (
   element: GirElement,
   wanted: readonly string[],
@@ -59,7 +93,7 @@ const walk = (
     if (!segmentsMatch(child.name, target)) return;
 
     const nextIndices = [...indices, index];
-    const nextTrail = [...trail, child.name];
+    const nextTrail = [...trail, indexedSegment(element.children, child, index)];
 
     if (depth === wanted.length - 1) {
       found.push({ element: child, indices: nextIndices, path: nextTrail.join("/") });
