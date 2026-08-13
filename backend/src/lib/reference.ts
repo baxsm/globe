@@ -1,4 +1,5 @@
 import type { FixKind, IssueNumber } from "@globe/engine";
+import { suppressionRecords } from "@globe/engine";
 
 /**
  * The pinned specification versions, and the fourteen issues as data for the margin.
@@ -37,6 +38,15 @@ export interface IssueReference {
   readonly kind: FixKind;
   readonly paragraph: string;
   readonly summary: string;
+  /**
+   * The validation rule this issue disapplies, when it disapplies one.
+   *
+   * Five issues have `kind: "suppression"` but only four are numbered validation rules.
+   * Issue 3 suppresses an element, `UTPRAttribution`, not a rule. A caller counting the
+   * kind would report five disapplied rules where the guidance names four, so the
+   * number is carried explicitly rather than left to be inferred.
+   */
+  readonly validationRule: number | null;
 }
 
 /**
@@ -47,7 +57,7 @@ export interface IssueReference {
  * part that changes what the document claims, and the data point is what carries the
  * truth alongside it.
  */
-export const ISSUES: readonly IssueReference[] = [
+const ISSUE_TEXT: readonly Omit<IssueReference, "validationRule">[] = [
   {
     number: 1,
     title: "Point 3.1.6 Adjusted Covered Taxes",
@@ -161,3 +171,19 @@ export const ISSUES: readonly IssueReference[] = [
       "A computed percentage outside [0, 1] is clamped to the boundary, and the true value is reported separately.",
   },
 ];
+
+/**
+ * The issues, each carrying the validation rule it disapplies.
+ *
+ * The rule numbers are read from the engine's own suppression records rather than
+ * repeated here. Written twice, the two lists drift the first time a rule is added, and
+ * the copy without tests is the one the UI would be reading.
+ */
+export const ISSUES: readonly IssueReference[] = ISSUE_TEXT.map((issue) => ({
+  ...issue,
+  validationRule:
+    suppressionRecords.find((record) => record.issue === issue.number)?.validationRule ?? null,
+}));
+
+/** The four rules the guidance says must not be applied. */
+export const DISAPPLIED_RULE_COUNT = suppressionRecords.length;

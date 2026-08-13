@@ -1,0 +1,186 @@
+/*
+ * Excluded from Biome in `biome.json`.
+ *
+ * Biome's CSS parser rejects Tailwind v4 at-rules such as `@theme`, so it reports this
+ * file as a syntax error rather than linting it. The exclusion is for that parser gap,
+ * not to silence a real finding; the file is otherwise plain CSS.
+ */
+@import "tailwindcss";
+@import "@fontsource-variable/source-serif-4";
+@import "@fontsource-variable/jetbrains-mono";
+
+/*
+ * One token block. Every colour, size and face is named exactly once here.
+ *
+ * The palette is paper, not panel: a warm off-white ground with near-black text and an
+ * ink set borrowed from proof marking. It is light-only by decision, not by omission.
+ * There is no `prefers-color-scheme` rule anywhere in this project, and adding one
+ * would contradict the surface it is imitating.
+ */
+@theme {
+  --color-ground: oklch(98.4% 0.005 85);
+  --color-surface: oklch(100% 0 0);
+  --color-sunk: oklch(96.3% 0.007 85);
+  --color-border: oklch(89% 0.008 85);
+  --color-border-strong: oklch(79% 0.01 85);
+
+  --color-text: oklch(23% 0.012 60);
+  --color-text-muted: oklch(48% 0.012 65);
+  --color-text-faint: oklch(64% 0.011 70);
+
+  /*
+   * The three ink roles the margin is built from.
+   *
+   * They must stay tellable apart at body size on a white ground, not only when
+   * enlarged. Struck is the muted red of a deletion, applied the blue-black of the
+   * correction written beside it, suppressed the amber of a rule struck from the sheet.
+   * The hues are far enough apart to survive the most common colour vision deficiency,
+   * where red and green collapse but blue and amber do not.
+   */
+  --color-ink-struck: oklch(50% 0.16 25);
+  --color-ink-applied: oklch(42% 0.13 255);
+  --color-ink-suppressed: oklch(52% 0.12 75);
+
+  --color-pos: oklch(46% 0.11 155);
+  --color-neg: oklch(50% 0.16 25);
+  --color-warn: oklch(52% 0.12 75);
+
+  --font-serif: "Source Serif 4 Variable", ui-serif, Georgia, serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+
+  --text-micro: 0.6875rem;
+
+  --radius-sheet: 2px;
+
+  /*
+   * Named rather than written inline at each call site.
+   *
+   * An arbitrary `shadow-[...]` carrying a nested `oklch()` does not survive Tailwind's
+   * bracket parsing: the class is emitted, the declaration is dropped, and the element
+   * renders with no shadow at all while the markup still says it has one. As a token it
+   * is one definition that either works everywhere or fails visibly everywhere.
+   */
+  --shadow-sheet: 0 16px 48px -12px oklch(23% 0.012 60 / 0.18);
+
+  /*
+   * Overlay motion, as utilities rather than per-component classes.
+   *
+   * Radix drives `data-[state]` on the overlay and content, so the animation belongs to
+   * the token layer where every dialog and the command palette read the same pair.
+   * Short and eased-out: an overlay that takes longer than about 150ms reads as lag
+   * rather than as motion.
+   */
+  --animate-overlay-in: overlay-in 0.15s ease-out;
+  --animate-overlay-out: overlay-out 0.12s ease-in;
+  --animate-sheet-in: sheet-in 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-sheet-out: sheet-out 0.12s ease-in;
+  --animate-palette-in: palette-in 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-palette-out: palette-out 0.12s ease-in;
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes overlay-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 6px)) scale(0.98);
+  }
+}
+
+@keyframes sheet-out {
+  to {
+    opacity: 0;
+    transform: translate(-50%, calc(-50% + 4px)) scale(0.99);
+  }
+}
+
+/*
+ * The palette sits at a fixed offset from the top rather than centred, so its transform
+ * only carries the horizontal centring. Reusing the dialog's keyframes here would
+ * translate it half its own height up the screen as it opened.
+ */
+@keyframes palette-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -6px) scale(0.98);
+  }
+}
+
+@keyframes palette-out {
+  to {
+    opacity: 0;
+    transform: translate(-50%, -4px) scale(0.99);
+  }
+}
+
+/*
+ * Serif is the default face because the product is a document.
+ *
+ * Setting it on `body` rather than reaching for a `font-serif` class on every block is
+ * what makes prose the default and mono the exception, which is the right way round
+ * here.
+ */
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-ground);
+    color: var(--color-text);
+    font-family: var(--font-serif);
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+  }
+
+  /*
+   * Every digit that sits in a column of figures is tabular.
+   *
+   * Applied to the element rather than left to a utility class: a proportional numeral
+   * in a tax figure is a legibility failure, and relying on each call site to remember
+   * the class is how one gets missed.
+   */
+  .figure {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ink-applied);
+    outline-offset: 2px;
+  }
+
+  /*
+   * Containers take focus programmatically for scroll management and keyboard entry.
+   * A ring on a non-interactive div reads as a rendering fault rather than as guidance.
+   */
+  [tabindex="-1"]:focus-visible {
+    outline: none;
+  }
+
+  ::selection {
+    background-color: oklch(42% 0.13 255 / 0.16);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

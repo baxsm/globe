@@ -6,7 +6,12 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["**", "!**/node_modules", "!engine/src/schema/xsd/**"]
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!engine/src/schema/xsd/**",
+      "!frontend/src/app/globals.css"
+    ]
   },
   "formatter": {
     "enabled": true,
