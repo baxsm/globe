@@ -1,10 +1,12 @@
 "use client";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { FilePlus2, Plus } from "lucide-react";
 import Link from "next/link";
 import { type FC, useState } from "react";
 import Button from "@/components/ui/button";
+import EmptyState from "@/components/ui/empty-state";
+import Measure from "@/components/ui/measure";
 import { api } from "@/lib/api";
 import { queryKeys } from "@/lib/query-keys";
 import { formatPeriod, formatTimestamp } from "@/lib/utils";
@@ -25,7 +27,7 @@ const ReturnsList: FC = () => {
   });
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-4 py-10 sm:px-8">
+    <Measure className="py-10">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="font-normal text-3xl tracking-[-0.015em]">Returns</h1>
@@ -43,19 +45,19 @@ const ReturnsList: FC = () => {
       </div>
 
       {returns.length === 0 ? (
-        <div className="mt-10 border-border border-t py-20 text-center">
-          <p className="text-lg text-text-muted">Create a return to begin.</p>
-          <p className="mx-auto mt-2 max-w-md text-sm text-text-faint leading-relaxed">
-            Each return is pinned to the schema and guidance versions current when it was created,
-            so reopening it later reads it against the same specification.
-          </p>
-
+        <div className="mt-10">
           {/* The empty state carries the action, so it is not a dead end with the only
               control elsewhere on the page. */}
-          <Button className="mt-6" onClick={() => setCreating(true)} variant="secondary">
-            <Plus aria-hidden="true" className="size-4" strokeWidth={2} />
-            New return
-          </Button>
+          <EmptyState
+            body="Each return is pinned to the schema and guidance versions current when it was created, so reopening it later reads it against the same specification."
+            icon={FilePlus2}
+            title="Create a return to begin."
+          >
+            <Button onClick={() => setCreating(true)} variant="secondary">
+              <Plus aria-hidden="true" className="size-4" strokeWidth={2} />
+              New return
+            </Button>
+          </EmptyState>
         </div>
       ) : (
         <div className="mt-8">
@@ -113,7 +115,7 @@ const ReturnsList: FC = () => {
       )}
 
       <CreateReturnDialog onOpenChange={setCreating} open={creating} />
-    </div>
+    </Measure>
   );
 };
 

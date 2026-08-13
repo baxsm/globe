@@ -1,7 +1,10 @@
 "use client";
 
 import { useSuspenseQuery } from "@tanstack/react-query";
+import { History } from "lucide-react";
 import { type FC, useState } from "react";
+import EmptyState from "@/components/ui/empty-state";
+import Measure from "@/components/ui/measure";
 import { api } from "@/lib/api";
 import { queryKeys } from "@/lib/query-keys";
 import { cn, formatTimestamp } from "@/lib/utils";
@@ -44,15 +47,13 @@ const VersionsView: FC<{ returnId: string }> = ({ returnId }) => {
     <>
       <ReturnHeader record={record.return} />
 
-      <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-8">
+      <Measure className="py-8">
         {newestFirst.length === 0 ? (
-          <div className="border-border border-t py-16 text-center">
-            <p className="text-lg text-text-muted">No versions saved yet.</p>
-            <p className="mx-auto mt-2 max-w-md text-sm text-text-faint leading-relaxed">
-              Saving the document writes an immutable version. Each one keeps the filer's original
-              figures, and the export applies the errata on top of them.
-            </p>
-          </div>
+          <EmptyState
+            body="Saving the document writes an immutable version. Each one keeps the filer's original figures, and the export applies the errata on top of them."
+            icon={History}
+            title="No versions saved yet."
+          />
         ) : (
           <>
             <div className="grid grid-cols-[4rem_1fr_auto] gap-4 border-border border-b px-3 pb-2 font-mono text-micro text-text-faint uppercase tracking-[0.14em]">
@@ -119,7 +120,7 @@ const VersionsView: FC<{ returnId: string }> = ({ returnId }) => {
             )}
           </>
         )}
-      </div>
+      </Measure>
     </>
   );
 };

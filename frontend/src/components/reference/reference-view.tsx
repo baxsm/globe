@@ -2,6 +2,7 @@
 
 import { useSuspenseQuery } from "@tanstack/react-query";
 import type { FC } from "react";
+import Measure from "@/components/ui/measure";
 import { api, type IssueReference } from "@/lib/api";
 import { queryKeys } from "@/lib/query-keys";
 import KindMark from "./kind-mark";
@@ -10,8 +11,9 @@ import KindMark from "./kind-mark";
  * The fourteen issues, as a reference a filer reads rather than a table they filter.
  *
  * Every margin annotation links here by issue number, so each entry carries an id and
- * scroll target. No filter bar: fourteen entries fit on a page and a control that
- * hides ten of them would make the set feel larger than it is.
+ * scroll target. No filter bar, because hiding ten of fourteen entries would make the
+ * set feel larger than it is, but the entries run about three screens, so there is a
+ * jump list instead: navigation without removing anything from the page.
  */
 const ReferenceView: FC = () => {
   const { data: issues } = useSuspenseQuery({
@@ -36,7 +38,7 @@ const ReferenceView: FC = () => {
   const disappliedRules = issues.filter((issue) => issue.validationRule !== null);
 
   return (
-    <div className="mx-auto w-full max-w-3xl px-4 py-10 sm:px-8">
+    <Measure as="prose" className="py-10">
       <h1 className="font-normal text-3xl tracking-[-0.015em]">Reference</h1>
 
       <p className="mt-4 max-w-prose text-lg text-text-muted leading-relaxed">
@@ -90,12 +92,35 @@ const ReferenceView: FC = () => {
         </span>
       </p>
 
+      {/*
+        A jump list, because the fourteen entries run about three screens.
+        Every margin annotation in the product links here by number, so arriving at
+        issue 11 and wanting issue 4 otherwise means scrolling and reading headings.
+      */}
+      <nav aria-label="Issues" className="mt-8 border-border border-t pt-4">
+        <span className="font-mono text-micro text-text-faint uppercase tracking-[0.14em]">
+          Jump to
+        </span>
+
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
+          {issues.map((issue) => (
+            <a
+              className="figure rounded-sheet border border-border bg-surface px-2 py-1 text-text-muted text-xs transition-colors duration-150 hover:border-border-strong hover:bg-sunk hover:text-text"
+              href={`#issue-${issue.number}`}
+              key={issue.number}
+            >
+              {String(issue.number).padStart(2, "0")}
+            </a>
+          ))}
+        </div>
+      </nav>
+
       <div className="mt-10">
         {issues.map((issue) => (
           <IssueEntry issue={issue} key={issue.number} />
         ))}
       </div>
-    </div>
+    </Measure>
   );
 };
 
