@@ -50,7 +50,11 @@ export { applyIssue14 } from "./errata/issue-14-percentage-clamp";
 export { findByPath, findOneByPath, localName } from "./errata/path";
 export type { ErrataContext, ErrataResult } from "./errata/registry";
 export { applyErrata, defaultContext, KNOWN_ISSUES } from "./errata/registry";
-export { suppressedValidationRules, suppressionRules } from "./errata/suppressions";
+export {
+  suppressedValidationRules,
+  suppressionRecords,
+  suppressionRules,
+} from "./errata/suppressions";
 export type {
   Application,
   FixKind,
@@ -59,9 +63,13 @@ export type {
   RuleContext,
   Suppression,
 } from "./errata/types";
+export { declaredPaths, isDeclaredPath } from "./schema/paths";
 export type { XsdValidationError, XsdValidationResult } from "./schema/validate-xsd";
 export { validateFileAgainstXsd } from "./schema/validate-xsd";
 export { parseGir } from "./serialize/parse";
 export { serializeGir } from "./serialize/serialize";
 export type { GirAttribute, GirDocument, GirElement, GirNode, GirText } from "./serialize/types";
 export { decodeText, isElement, isText, textContent } from "./serialize/types";
+export { validationRules } from "./validate/rules";
+export type { Finding, Severity, ValidationResult, ValidationRule } from "./validate/types";
+export { validateGir } from "./validate/validate";

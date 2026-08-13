@@ -87,3 +87,18 @@ export const suppressionRules: readonly Rule[] = SUPPRESSED.map((suppressed) => 
 export const suppressedValidationRules: readonly number[] = SUPPRESSED.map(
   (suppressed) => suppressed.validationRule,
 );
+
+/**
+ * The same four records, without needing a document to produce them.
+ *
+ * The errata layer reaches them through `apply`, because there a suppression is one rule
+ * among fourteen and has to share their shape. A validation run has no document-shaped
+ * question to ask: it reports the four unconditionally. Both read this one list, so the
+ * rule numbers and paragraphs cannot drift apart between the two layers.
+ */
+export const suppressionRecords: readonly Suppression[] = SUPPRESSED.map((suppressed) => ({
+  issue: suppressed.issue,
+  validationRule: suppressed.validationRule,
+  paragraph: suppressed.paragraph,
+  reason: suppressed.reason,
+}));

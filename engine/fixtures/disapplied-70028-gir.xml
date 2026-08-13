@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globe:GLOBE_OECD xmlns:globe="urn:oecd:ties:globe:v2" xmlns:iso="urn:oecd:ties:isoglobetypes:v1" xmlns:stf="urn:oecd:ties:globestf:v5" version="1.0">
+	<globe:MessageSpec>
+		<globe:TransmittingCountry>FR</globe:TransmittingCountry>
+		<globe:ReceivingCountry>DE</globe:ReceivingCountry>
+		<globe:MessageType>GIR</globe:MessageType>
+		<globe:MessageRefId>FR2026GIR00000000000000000001</globe:MessageRefId>
+		<globe:MessageTypeIndic>GIR101</globe:MessageTypeIndic>
+		<globe:ReportingPeriod>2024-12-31</globe:ReportingPeriod>
+		<globe:Timestamp>2026-08-13T09:30:00Z</globe:Timestamp>
+	</globe:MessageSpec>
+	<globe:GLOBEBody>
+		<globe:FilingInfo>
+			<globe:FilingCE>
+				<globe:ResCountryCode>FR</globe:ResCountryCode>
+				<globe:Name>Example Group Holdings SA</globe:Name>
+				<globe:TIN issuedBy="FR">FR12345678901</globe:TIN>
+				<globe:Role>GIR401</globe:Role>
+			</globe:FilingCE>
+			<globe:AccountingInfo>
+				<globe:CFSofUPE>GIR501</globe:CFSofUPE>
+				<globe:FAS>IFRS</globe:FAS>
+				<globe:Currency>EUR</globe:Currency>
+			</globe:AccountingInfo>
+			<globe:Period>
+				<globe:Start>2024-01-01</globe:Start>
+				<globe:End>2024-12-31</globe:End>
+			</globe:Period>
+			<globe:NameMNE>Example Group</globe:NameMNE>
+			<globe:DocSpec>
+				<stf:DocTypeIndic>OECD1</stf:DocTypeIndic>
+				<stf:DocRefId>FR2026GIR00000000000000000001D1</stf:DocRefId>
+			</globe:DocSpec>
+		</globe:FilingInfo>
+		<globe:GeneralSection>
+			<globe:RecJurCode>DE</globe:RecJurCode>
+			<globe:CorporateStructure>
+				<globe:UPE>
+					<globe:OtherUPE>
+						<globe:ID>
+							<globe:Name>Example Group Holdings SA</globe:Name>
+							<globe:ResCountryCode>FR</globe:ResCountryCode>
+							<globe:TIN issuedBy="FR">FR12345678901</globe:TIN>
+							<globe:Rules>GIR201</globe:Rules>
+							<globe:GlobeStatus>GIR301</globe:GlobeStatus>
+						</globe:ID>
+					</globe:OtherUPE>
+				</globe:UPE>
+				<globe:CE>
+					<globe:ID>
+						<globe:Name>Example Minority Holding Ltd</globe:Name>
+						<globe:ResCountryCode>IE</globe:ResCountryCode>
+						<globe:TIN issuedBy="IE">IE9876543Z</globe:TIN>
+						<globe:Rules>GIR201</globe:Rules>
+						<globe:GlobeStatus>GIR301</globe:GlobeStatus>
+					</globe:ID>
+					<globe:Ownership>
+						<globe:OwnershipType>GIR801</globe:OwnershipType>
+						<globe:TIN issuedBy="FR">FR12345678901</globe:TIN>
+						<globe:OwnershipPercentage>0.0000</globe:OwnershipPercentage>
+					</globe:Ownership>
+				</globe:CE>
+			</globe:CorporateStructure>
+			<globe:DocSpec>
+				<stf:DocTypeIndic>OECD1</stf:DocTypeIndic>
+				<stf:DocRefId>FR2026GIR00000000000000000001D11</stf:DocRefId>
+			</globe:DocSpec>
+		</globe:GeneralSection>
+		<globe:JurisdictionSection>
+			<globe:RecJurCode>DE</globe:RecJurCode>
+			<globe:Jurisdiction>IE</globe:Jurisdiction>
+			<globe:GLoBETax>
+				<globe:ETR>
+					<globe:ETRStatus>
+						<globe:ETRComputation>
+							<globe:OverallComputation>
+								<globe:FANIL>1000000</globe:FANIL>
+								<globe:AdjustedFANIL>1000000</globe:AdjustedFANIL>
+								<globe:NetGlobeIncome>
+									<globe:Total>1000000</globe:Total>
+								</globe:NetGlobeIncome>
+								<globe:IncomeTaxExpense>100000</globe:IncomeTaxExpense>
+								<globe:ETRRate>0.1000</globe:ETRRate>
+								<globe:TopUpTaxPercentage>0.0500</globe:TopUpTaxPercentage>
+								<globe:AdjustedCoveredTax>
+									<globe:Total>100000</globe:Total>
+									<globe:AggregrateCurrentTax>100000</globe:AggregrateCurrentTax>
+								</globe:AdjustedCoveredTax>
+								<globe:ExcessProfits>1000000</globe:ExcessProfits>
+								<globe:TopUpTax>50000</globe:TopUpTax>
+								<globe:ExcessNegTaxExpense>
+									<globe:PriorYearBalance>0</globe:PriorYearBalance>
+									<globe:GeneratedInRFY>0</globe:GeneratedInRFY>
+									<globe:UtilizedInRFY>0</globe:UtilizedInRFY>
+									<globe:Remaining>0</globe:Remaining>
+								</globe:ExcessNegTaxExpense>
+							</globe:OverallComputation>
+						</globe:ETRComputation>
+					</globe:ETRStatus>
+				</globe:ETR>
+			</globe:GLoBETax>
+			<globe:DocSpec>
+				<stf:DocTypeIndic>OECD1</stf:DocTypeIndic>
+				<stf:DocRefId>FR2026GIR00000000000000000001D12</stf:DocRefId>
+			</globe:DocSpec>
+		</globe:JurisdictionSection>
+	</globe:GLOBEBody>
+</globe:GLOBE_OECD>
