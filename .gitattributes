@@ -1,0 +1,5 @@
+* text=auto eol=lf
+*.xsd text eol=lf
+*.png binary
+*.zip binary
+*.pdf binary

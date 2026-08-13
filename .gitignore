@@ -1,0 +1,32 @@
+# dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# builds
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# env
+.env
+.env.*
+!.env.example
+
+# test artifacts
+coverage/
+**/e2e/screenshots/
+**/test-results/
+**/playwright-report/
+**/.vitest-cache/
+
+# local tooling
+.claude/
+CLAUDE.md
+CLAUDE.local.md
+docs/
+.DS_Store
+Thumbs.db
+*.log
