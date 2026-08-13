@@ -184,6 +184,3 @@ export const ISSUES: readonly IssueReference[] = ISSUE_TEXT.map((issue) => ({
   validationRule:
     suppressionRecords.find((record) => record.issue === issue.number)?.validationRule ?? null,
 }));
-
-/** The four rules the guidance says must not be applied. */
-export const DISAPPLIED_RULE_COUNT = suppressionRecords.length;

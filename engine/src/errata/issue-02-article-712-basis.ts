@@ -1,6 +1,6 @@
 import type { GirDocument, GirElement, GirNode } from "../serialize/types";
 import { findByPath, insertBefore, rawText, replaceAt } from "./path";
-import type { Application, Rule, RuleResult } from "./types";
+import type { Application, RuleResult } from "./types";
 
 /**
  * Issue 2: Article 7.1.2 GloBE Losses of a UPE that is a Flow-through Entity.
@@ -148,16 +148,4 @@ export const applyIssue2 = (document: GirDocument, context: Issue2Context): Rule
   }
 
   return { document: { ...document, root }, applications, suppressions: [] };
-};
-
-/**
- * Registered form. Without an explicit election this rule does nothing, which is the
- * safe default: over-application here corrupts a valid Article 7.2.2 filing.
- */
-export const issue2Rule: Rule = {
-  issue: 2,
-  kind: "substitution",
-  paragraph: "3-8",
-  name: "article-712-basis-substitute",
-  apply: (document) => applyIssue2(document, { article712BasisIndices: [] }),
 };

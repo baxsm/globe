@@ -69,6 +69,9 @@ export type {
 } from "./errata/types";
 export { declaredPaths, isDeclaredPath } from "./schema/paths";
 export type { XsdValidationError, XsdValidationResult } from "./schema/validate-xsd";
+// Shells out to libxml2 through python, so it is a conformance tool rather than a
+// request-path check. The API does not call it: a filing must not fail to save because
+// an interpreter is missing, and `validateGir` covers what a filer needs to see.
 export { validateFileAgainstXsd } from "./schema/validate-xsd";
 export { parseGir } from "./serialize/parse";
 export { serializeGir } from "./serialize/serialize";

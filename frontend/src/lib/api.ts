@@ -6,8 +6,8 @@ import { env } from "./env";
  * The API is Hono over REST, not tRPC, so there is no generated client and the response
  * types here are written by hand against `docs/api.md` and the handlers themselves.
  * They are asserted rather than inferred, which is a real risk: a field renamed in the
- * backend compiles fine here and fails at runtime. `src/lib/_tests/api-contract.test.ts`
- * exists to catch exactly that, by checking these shapes against the live server.
+ * backend compiles fine here and fails at runtime. `_tests/api-contract.test.ts` checks
+ * these shapes against a live server, and skips itself when none is listening.
  */
 
 /** The uniform error body every failing route returns. */
@@ -50,13 +50,12 @@ interface RequestOptions {
   readonly body?: unknown;
   /** Forwarded from `cookies()` when the call originates on the server. */
   readonly cookie?: string;
-  readonly signal?: AbortSignal;
   /** Set for routes that answer XML rather than JSON. */
   readonly accept?: "json" | "text";
 }
 
 const request = async <T>(path: string, options: RequestOptions = {}): Promise<T> => {
-  const { method = "GET", body, cookie, signal, accept = "json" } = options;
+  const { method = "GET", body, cookie, accept = "json" } = options;
 
   const headers: Record<string, string> = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";
@@ -75,12 +74,10 @@ const request = async <T>(path: string, options: RequestOptions = {}): Promise<T
       // would show one user's return after a logout, and a stale list after a create.
       cache: "no-store",
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-      ...(signal === undefined ? {} : { signal }),
     });
-  } catch (cause) {
+  } catch {
     // A refused connection is not an application error and must not read as one. The
     // backend being down is the single most likely local failure and deserves to say so.
-    if (cause instanceof Error && cause.name === "AbortError") throw cause;
     throw new ApiError(0, "network_error", "Could not reach the API. Check it is running.");
   }
 

@@ -78,9 +78,3 @@ export interface Rule {
   readonly name: string;
   readonly apply: (document: GirDocument, context: RuleContext) => RuleResult;
 }
-
-export const emptyResult = (document: GirDocument): RuleResult => ({
-  document,
-  applications: [],
-  suppressions: [],
-});

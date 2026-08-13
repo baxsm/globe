@@ -1,5 +1,5 @@
 import type { Change, GirDocument } from "@globe/engine";
-import { diffDocuments, parseGir, serializeGir } from "@globe/engine";
+import { diffDocuments, parseGir } from "@globe/engine";
 import { and, asc, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { db } from "@/db/client";
 import { returnVersions, type VersionElections } from "@/db/schema";
@@ -186,5 +186,3 @@ export const documentFromXml = (xml: string): StoredDocument => {
     );
   }
 };
-
-export const xmlFromDocument = (document: StoredDocument): string => serializeGir(document);
