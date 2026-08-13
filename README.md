@@ -32,9 +32,31 @@ four-decimal rounding inside a one percent tolerance and floats cannot express t
 
 ## Setup
 
-Requires [Bun](https://bun.sh) 1.3 or newer.
+Requires [Bun](https://bun.sh) 1.3 or newer and a PostgreSQL 16 or newer connection string.
+
+The engine is standalone and needs no database:
 
 ```bash
+cd engine
 bun install
+bun test
+```
+
+The API needs a database. Copy `backend/.env.example` to `backend/.env`, set `DATABASE_URL` and a
+`SESSION_SECRET` of at least 32 characters, then:
+
+```bash
+cd backend
+bun install
+bun run db:migrate
+bun run dev
+```
+
+Its test suite runs against a real database rather than a mock. Point `TEST_DATABASE_URL` at a
+scratch database, since the suite clears every table between tests:
+
+```bash
+cd backend
+bun run db:migrate
 bun test
 ```
