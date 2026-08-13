@@ -86,6 +86,28 @@ const indexedSegment = (siblings: readonly GirNode[], child: GirElement): string
 };
 
 /**
+ * Every node path in the document, in document order.
+ *
+ * The margin needs to know which addresses exist so it can report the corrections that
+ * match none of them. An augmentation adds an element the filer never wrote, so its
+ * address is absent from the stored document and no row can carry it.
+ */
+export const allPaths = (document: GirDocument): readonly string[] => {
+  const paths: string[] = [];
+
+  const walk = (element: GirElement, parentPath: string): void => {
+    for (const child of childElements(element)) {
+      const path = childPath(parentPath, child, element.children);
+      paths.push(path);
+      walk(child, path);
+    }
+  };
+
+  walk(document.root, localName(document.root.name));
+  return paths;
+};
+
+/**
  * One canonical spelling for a path, so both sides of the match agree.
  *
  * The engine reports the document's own names, `globe:JurisdictionSection[1]`, while the

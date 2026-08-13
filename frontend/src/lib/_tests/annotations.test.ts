@@ -85,6 +85,34 @@ describe("AnnotationIndex", () => {
   });
 });
 
+describe("unattached", () => {
+  const rendered = [TREE_PATH, "GLOBE_OECD/GLOBEBody/JurisdictionSection[1]"];
+
+  it("reports a correction whose target the document does not contain", () => {
+    // An augmentation adds an element the filer never wrote, so no row in the tree can
+    // carry it. Reported by the engine and shown nowhere is a silent omission, which is
+    // the one thing this surface must not do.
+    const added = application("globe:JurisdictionSection[1]/globe:AdditionalDataPoint", 4);
+    const index = new AnnotationIndex([application(ENGINE_PATH), added], []);
+
+    expect(index.unattached(rendered)).toEqual([added]);
+  });
+
+  it("says nothing about a correction a node did carry", () => {
+    const index = new AnnotationIndex([application(ENGINE_PATH)], []);
+
+    expect(index.unattached(rendered)).toEqual([]);
+  });
+
+  it("orders what it reports by issue number", () => {
+    const six = application("globe:JurisdictionSection[1]/globe:Later", 6);
+    const two = application("globe:JurisdictionSection[1]/globe:Earlier", 2);
+    const index = new AnnotationIndex([six, two], []);
+
+    expect(index.unattached(rendered).map((a) => a.issueNumber)).toEqual([2, 6]);
+  });
+});
+
 describe("repeats", () => {
   it("marks every application after the first of its issue", () => {
     // Issue 7 writes nine zeros per jurisdiction, each carrying the same sentence about

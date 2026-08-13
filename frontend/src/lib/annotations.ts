@@ -62,6 +62,42 @@ export class AnnotationIndex {
     }
   }
 
+  /**
+   * Corrections that belong to no node in the document, in issue order.
+   *
+   * An augmentation adds an element the filer never wrote, so its address does not exist
+   * in the stored document and no row can carry it. Issues 2, 4 and 6 are all this shape.
+   * Without this they would be reported by the API, written into the export, and shown
+   * nowhere: a silent omission, which is the one thing this surface must never do.
+   *
+   * Resolved against the document rather than by watching what the tree asked for, so the
+   * answer does not depend on render order or on a component remembering to report back.
+   */
+  unattached(paths: readonly string[]): readonly ErrataApplication[] {
+    const rendered = new Set<string>();
+    for (const path of paths) rendered.add(normalizePath(path));
+
+    const attached = new Set<string>();
+    for (const path of rendered) {
+      const segments = path.split("/").filter(Boolean);
+      for (let start = 0; start < segments.length; start += 1) {
+        const key = segments.slice(start).join("/");
+        if (this.byPath.has(key)) {
+          attached.add(key);
+          break;
+        }
+      }
+    }
+
+    const orphans: ErrataApplication[] = [];
+    for (const [key, bucket] of this.byPath) {
+      if (attached.has(key)) continue;
+      orphans.push(...bucket.errata);
+    }
+
+    return orphans.sort((a, b) => a.issueNumber - b.issueNumber);
+  }
+
   /** True where this rule has already given its reason against an earlier node. */
   repeats(application: ErrataApplication): boolean {
     return this.firstOfIssue.get(application.issueNumber) !== application.xpath;

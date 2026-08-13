@@ -4,13 +4,13 @@ import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-q
 import { type FC, useMemo } from "react";
 import Button from "@/components/ui/button";
 import { AnnotationIndex } from "@/lib/annotations";
-import { api, type SuppressionRecord } from "@/lib/api";
+import { api, type ErrataApplication, type SuppressionRecord } from "@/lib/api";
 import type { GirDocument } from "@/lib/document";
-import { childElements, childKey, localName } from "@/lib/document";
+import { allPaths, childElements, childKey, localName } from "@/lib/document";
 import { queryKeys } from "@/lib/query-keys";
 import DocumentNode, { NODE_GRID } from "./document-node";
 import JurisdictionFigures from "./jurisdiction-figures";
-import { SuppressionNote } from "./margin-note";
+import { ErrataNote, SuppressionNote } from "./margin-note";
 import ReturnHeader from "./return-header";
 
 /**
@@ -125,6 +125,8 @@ const ReturnDocument: FC<{ returnId: string }> = ({ returnId }) => {
           ))}
         </div>
 
+        <Additions applications={annotations.unattached(allPaths(document))} />
+
         {jurisdictions.length > 0 && <JurisdictionFigures jurisdictions={jurisdictions} />}
       </div>
     </>
@@ -155,6 +157,42 @@ const Suppressions: FC<{ records: readonly SuppressionRecord[] }> = ({ records }
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {records.map((record) => (
           <SuppressionNote key={record.validationRule} suppression={record} />
+        ))}
+      </div>
+    </section>
+  );
+};
+
+/**
+ * Corrections that add an element the document does not contain.
+ *
+ * An augmentation writes something the filer never did, so there is no row in the tree
+ * above to annotate. Issues 2, 4 and 6 are all this shape. They appear here, after the
+ * document, because the alternative is showing them nowhere: they would be reported by
+ * the engine, written into the export, and invisible on the one surface that exists to
+ * show what the errata changed.
+ */
+const Additions: FC<{ applications: readonly ErrataApplication[] }> = ({ applications }) => {
+  if (applications.length === 0) return null;
+
+  return (
+    <section className="mt-10">
+      <h2 className="border-border border-b pb-2 font-mono text-micro text-text-faint uppercase tracking-[0.14em]">
+        Added by the errata
+      </h2>
+
+      <p className="mt-3 max-w-prose text-balance text-sm text-text-muted leading-relaxed">
+        These carry data the GIR requires and the schema has no element for. They are written into
+        the export rather than the document above, so there is no line in the return to mark them
+        against.
+      </p>
+
+      <div className="mt-4 space-y-3">
+        {applications.map((application) => (
+          <ErrataNote
+            application={application}
+            key={`${application.issueNumber}-${application.xpath}-${application.paragraph}`}
+          />
         ))}
       </div>
     </section>
