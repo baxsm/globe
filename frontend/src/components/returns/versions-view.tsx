@@ -71,11 +71,16 @@ const VersionsView: FC<{ returnId: string }> = ({ returnId }) => {
                 <span className="figure text-sm text-text-muted">
                   {formatTimestamp(version.createdAt)}
                 </span>
+                {/*
+                  Whether an export was cached, not whether one can be produced. Every
+                  saved version exports on demand, so this says "stored" rather than
+                  "generated": the latter reads as though the export does not exist yet.
+                */}
                 <span className="text-right text-xs">
                   {version.hasXml ? (
-                    <span className="text-text-muted">XML generated</span>
+                    <span className="text-text-muted">Export stored</span>
                   ) : (
-                    <span className="text-text-faint">Not generated</span>
+                    <span className="text-text-faint">Exports on demand</span>
                   )}
                 </span>
               </div>

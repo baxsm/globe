@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { expect, test } from "@playwright/test";
 
 /**
@@ -126,8 +127,9 @@ test.describe("returns", () => {
 /**
  * The redline surface, driven the way a filer reads it.
  *
- * The fixture is posted through the API because there is no upload screen yet; what is
- * being tested is the reading surface, not the route that stores a document.
+ * The fixture is posted through the API rather than through the save dialog, so a break
+ * in the reading surface is not masked by a break in the upload. The dialog itself is
+ * driven end to end in "saving a GIR" below.
  */
 test.describe("the margin", () => {
   const RICH = new URL("../../engine/fixtures/rich-gir.xml", import.meta.url);
@@ -247,5 +249,102 @@ test.describe("the margin", () => {
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
     expect(overflow, "the document surface scrolls horizontally at 390px").toBeLessThanOrEqual(0);
+  });
+});
+
+/**
+ * Saving a GIR through the dialog, which is the only way a filer gets a document in.
+ *
+ * Driven through the file picker rather than the textarea because that is the path a
+ * filer takes with a return their own software produced.
+ */
+test.describe("saving a GIR", () => {
+  const RICH = fileURLToPath(new URL("../../engine/fixtures/rich-gir.xml", import.meta.url));
+
+  let email: string;
+  let returnId: string;
+
+  test.beforeEach(async ({ request }, testInfo) => {
+    email = uniqueEmail(`${testInfo.project.name}-save`);
+
+    await request.post(`${API}/api/auth/register`, { data: { email, password: PASSWORD } });
+
+    const created = await request.post(`${API}/api/returns`, {
+      data: { name: "Meridian upload", reportingPeriod: "2024-12-31" },
+    });
+    returnId = (await created.json()).return.id;
+  });
+
+  test("takes a file and its elections, then renders the corrections they unlock", async ({
+    page,
+  }) => {
+    await page.goto("/login");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password").fill(PASSWORD);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.waitForURL(/\/returns$/);
+
+    await page.goto(`/returns/${returnId}`);
+    await expect(page.getByText("No document saved yet.")).toBeVisible();
+
+    await page.getByRole("button", { name: "Save a GIR" }).first().click();
+    await page.setInputFiles('input[type="file"]', RICH);
+
+    // The elections are the whole reason this dialog has more than one field: issues 2,
+    // 4, 6 and 7 cannot be read off the document and stay dormant without them.
+    await page.getByLabel("A safe harbour applies").check();
+    await page.getByLabel("Equity inclusion amount").fill("1250000");
+    await page.getByLabel("Article 7.1.2 basis").fill("0");
+    await page.getByLabel("Unclaimed accrual TINs").fill("FR8291046, DE5520117");
+
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+
+    await expect(page.getByText("No document saved yet.")).toBeHidden();
+    await page.getByRole("button", { name: "Validate" }).click();
+
+    await expect(
+      page.getByText("4 validation rules were not applied to this return."),
+    ).toBeVisible();
+
+    // Each of these fires only because an election above said so, and each writes an
+    // element the document has no line for, so they land under "Added by the errata".
+    await expect(page.getByText("Added by the errata")).toBeVisible();
+    await expect(page.getByText("ADT2 EquityGain", { exact: false })).toBeVisible();
+    await expect(page.getByText("FR8291046, DE5520117", { exact: false })).toBeVisible();
+  });
+
+  test("names the parse failure rather than a generic error", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password").fill(PASSWORD);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.waitForURL(/\/returns$/);
+
+    await page.goto(`/returns/${returnId}`);
+    await page.getByRole("button", { name: "Save a GIR" }).first().click();
+
+    await page.getByLabel("GIR XML").fill("<globe:GLOBE_OECD><unclosed>");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+
+    // The document must not be silently repaired, and the message has to say what is
+    // wrong with it rather than that something went wrong.
+    await expect(page.getByText(/Could not parse the document/)).toBeVisible();
+  });
+
+  test("rejects a fractional equity amount before it reaches the API", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password").fill(PASSWORD);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.waitForURL(/\/returns$/);
+
+    await page.goto(`/returns/${returnId}`);
+    await page.getByRole("button", { name: "Save a GIR" }).first().click();
+
+    await page.setInputFiles('input[type="file"]', RICH);
+    await page.getByLabel("Equity inclusion amount").fill("1250.75");
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+
+    await expect(page.getByText("Use a whole number of currency units.")).toBeVisible();
   });
 });
