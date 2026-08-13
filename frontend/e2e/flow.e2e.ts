@@ -122,3 +122,130 @@ test.describe("returns", () => {
     }
   });
 });
+
+/**
+ * The redline surface, driven the way a filer reads it.
+ *
+ * The fixture is posted through the API because there is no upload screen yet; what is
+ * being tested is the reading surface, not the route that stores a document.
+ */
+test.describe("the margin", () => {
+  const RICH = new URL("../../engine/fixtures/rich-gir.xml", import.meta.url);
+
+  let email: string;
+  let returnId: string;
+
+  test.beforeEach(async ({ request }, testInfo) => {
+    email = uniqueEmail(`${testInfo.project.name}-margin`);
+
+    await request.post(`${API}/api/auth/register`, { data: { email, password: PASSWORD } });
+
+    const created = await request.post(`${API}/api/returns`, {
+      data: { name: "Meridian FY2024", reportingPeriod: "2024-12-31" },
+    });
+    returnId = (await created.json()).return.id;
+
+    const { readFileSync } = await import("node:fs");
+
+    await request.post(`${API}/api/returns/${returnId}/versions`, {
+      data: {
+        document: readFileSync(RICH, "utf8"),
+        elections: { safeHarbourApplies: false },
+      },
+    });
+
+    await request.post(`${API}/api/returns/${returnId}/versions/1/validate`);
+  });
+
+  test("shows the four suppressions and annotates the nodes the errata changed", async ({
+    page,
+  }) => {
+    await page.goto("/login");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password").fill(PASSWORD);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await expect(page).toHaveURL(/\/returns$/);
+
+    await page.goto(`/returns/${returnId}`);
+
+    // The single most important assertion in the phase. Four rules are disapplied on
+    // every run, and a surface that only showed them alongside findings would render
+    // nothing on the happy path a filer sees most often.
+    await expect(
+      page.getByText("4 validation rules were not applied to this return."),
+    ).toBeVisible();
+    // The rule number and the "not applied" mark are separate elements, so each is
+    // addressed on its own rather than as one string.
+    for (const rule of [60025, 60026, 70092, 70028]) {
+      await expect(page.getByText(`Rule ${rule}`, { exact: true })).toBeVisible();
+    }
+    await expect(page.getByText("not applied", { exact: true })).toHaveCount(4);
+
+    // A branch carrying a correction opens itself, so the annotation is on screen without
+    // the reader hunting through disclosures for it.
+    await expect(page.getByText("Issue 01").first()).toBeVisible();
+    await expect(
+      page.getByText(
+        "an element for GIR point 3.1.6, Adjusted Covered Taxes, which does not exist",
+      ),
+    ).toBeVisible();
+
+    // The citation reaches the reference entry it names.
+    await page
+      .getByRole("link", { name: /Issue 01/ })
+      .first()
+      .click();
+    await expect(page).toHaveURL(/\/reference#issue-1$/);
+  });
+
+  test("marks the errata regions in the exported XML", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password").fill(PASSWORD);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    await page.waitForURL(/\/returns$/);
+
+    await page.goto(`/returns/${returnId}/xml`);
+
+    // The count is its own element, so the sentence is addressed by its container rather
+    // than as one string.
+    await expect(page.getByText(/lines/).first()).toBeVisible();
+    await expect(page.getByText("GIR2516").first()).toBeVisible();
+    // A marked line names the issue that wrote it, which is what makes the view checkable.
+    await expect(page.getByText(/^issue \d\d$/).first()).toBeVisible();
+
+    /**
+     * The wire format scrolls inside its own container, never the page.
+     *
+     * A GIR has lines longer than any viewport. Letting them widen the document gives the
+     * whole page a horizontal scrollbar, so the chrome slides away with the content.
+     */
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow, "the XML view scrolls the page horizontally").toBeLessThanOrEqual(0);
+  });
+
+  test("keeps the margin readable on a narrow viewport", async ({ page }) => {
+    await page.goto("/login");
+    await page.getByLabel("Email").fill(email);
+    await page.getByLabel("Password").fill(PASSWORD);
+    await page.getByRole("button", { name: "Sign in" }).click();
+    // Sign-in navigates; going somewhere else before it settles cancels it and the next
+    // request arrives without the session.
+    await page.waitForURL(/\/returns$/);
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`/returns/${returnId}`);
+
+    // The margin collapses inline rather than disappearing. Hiding it on a phone would
+    // hide the product.
+    await expect(page.getByText("Issue 01").first()).toBeVisible();
+    await expect(page.getByText("Rule 60025", { exact: true })).toBeVisible();
+
+    const overflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(overflow, "the document surface scrolls horizontally at 390px").toBeLessThanOrEqual(0);
+  });
+});

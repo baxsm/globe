@@ -7,6 +7,7 @@ import {
   identifyingLabel,
   leafValue,
   localName,
+  normalizePath,
 } from "@/lib/document";
 
 const element = (
@@ -75,12 +76,8 @@ describe("identifyingLabel", () => {
 
 describe("childKey", () => {
   it("distinguishes repeated siblings by their identifier", () => {
-    const ie = element("globe:JurisdictionSection", [
-      element("globe:Jurisdiction", [text("IE")]),
-    ]);
-    const de = element("globe:JurisdictionSection", [
-      element("globe:Jurisdiction", [text("DE")]),
-    ]);
+    const ie = element("globe:JurisdictionSection", [element("globe:Jurisdiction", [text("IE")])]);
+    const de = element("globe:JurisdictionSection", [element("globe:Jurisdiction", [text("DE")])]);
 
     expect(childKey(ie, 0)).not.toBe(childKey(de, 1));
   });
@@ -103,6 +100,66 @@ describe("childKey", () => {
 
 describe("childPath", () => {
   it("builds a path from the root down", () => {
-    expect(childPath("GLOBE_OECD", element("globe:GLOBEBody"))).toBe("GLOBE_OECD/GLOBEBody");
+    const body = element("globe:GLOBEBody");
+    expect(childPath("GLOBE_OECD", body, [body])).toBe("GLOBE_OECD/GLOBEBody");
+  });
+
+  it("leaves a name that occurs once unindexed", () => {
+    const spec = element("globe:MessageSpec");
+    const body = element("globe:GLOBEBody");
+
+    expect(childPath("GLOBE_OECD", spec, [spec, body])).toBe("GLOBE_OECD/MessageSpec");
+  });
+
+  it("gives each repeated sibling a distinct path", () => {
+    // Without the ordinal all three jurisdictions share one address, so every annotation
+    // matches the first of them and the margin points at the wrong node while looking
+    // entirely plausible.
+    const first = element("globe:JurisdictionSection");
+    const second = element("globe:JurisdictionSection");
+    const third = element("globe:JurisdictionSection");
+    const siblings = [first, second, third];
+
+    const paths = siblings.map((child) => childPath("GLOBEBody", child, siblings));
+
+    expect(paths).toEqual([
+      "GLOBEBody/JurisdictionSection[1]",
+      "GLOBEBody/JurisdictionSection[2]",
+      "GLOBEBody/JurisdictionSection[3]",
+    ]);
+  });
+
+  it("counts only siblings sharing the name", () => {
+    const jurisdiction = element("globe:JurisdictionSection");
+    const other = element("globe:JurisdictionSection");
+    const filing = element("globe:FilingInfo");
+
+    expect(childPath("GLOBEBody", other, [filing, jurisdiction, other])).toBe(
+      "GLOBEBody/JurisdictionSection[2]",
+    );
+  });
+});
+
+describe("normalizePath", () => {
+  it("matches the engine's prefixed path against the tree's local one", () => {
+    // The engine reports the document's own names; the tree renders local ones. Raw
+    // string comparison matches nothing and the margin renders empty on a document that
+    // does have corrections.
+    const fromEngine = "globe:GLOBEBody/globe:JurisdictionSection[1]/globe:GLoBETax";
+    const fromTree = "GLOBE_OECD/GLOBEBody/JurisdictionSection[1]/GLoBETax";
+
+    expect(normalizePath(fromTree).endsWith(normalizePath(fromEngine))).toBe(true);
+  });
+
+  it("ignores the casing both sides disagree about", () => {
+    // The guidance writes GloBEBody, GlobeBody and GLOBEBody for one element, and the
+    // schema declares GLoBETax where its own type is GLOBETax.
+    expect(normalizePath("GLOBEBody/GLoBETax")).toBe(normalizePath("GloBEBody/globe:GLOBETax"));
+  });
+
+  it("keeps the ordinal, which is the part that disambiguates", () => {
+    expect(normalizePath("GLOBEBody/JurisdictionSection[2]")).not.toBe(
+      normalizePath("GLOBEBody/JurisdictionSection[1]"),
+    );
   });
 });

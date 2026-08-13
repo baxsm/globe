@@ -21,6 +21,7 @@ const ReturnHeader: FC<{ record: ReturnRecord }> = ({ record }) => {
   // typed `Link` rejects.
   const tabs = [
     { href: `/returns/${record.id}`, label: "Document" },
+    { href: `/returns/${record.id}/xml`, label: "XML" },
     { href: `/returns/${record.id}/versions`, label: "Versions" },
   ] as const;
 

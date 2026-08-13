@@ -218,6 +218,32 @@ export const api = {
 
   referenceSchema: (cookie?: string) =>
     request<SchemaReference>("/reference/schema", { ...withCookie(cookie) }),
+
+  /** The most recent run, without starting one. `run` is null if never validated. */
+  getValidation: (id: string, version: number, cookie?: string) =>
+    request<ValidationResponse>(`/returns/${id}/versions/${version}/validation`, {
+      ...withCookie(cookie),
+    }),
+
+  runValidation: (id: string, version: number) =>
+    request<ValidationResponse>(`/returns/${id}/versions/${version}/validate`, { method: "POST" }),
+
+  /**
+   * The wire format, with the errata applied.
+   *
+   * The GET route answers `application/xml`, so this reads the body as text. Parsing it
+   * as JSON would throw inside the client and replace the document with a syntax error.
+   */
+  getXml: (id: string, version: number, cookie?: string) =>
+    request<string>(`/returns/${id}/versions/${version}/xml`, {
+      accept: "text",
+      ...withCookie(cookie),
+    }),
+
+  diffVersions: (id: string, from: number, to: number, cookie?: string) =>
+    request<{ changes: DocumentChange[] }>(`/returns/${id}/versions/${from}/diff/${to}`, {
+      ...withCookie(cookie),
+    }),
 };
 
 /** A stored version as `GET /api/returns/:id` returns it. */
@@ -226,6 +252,75 @@ export interface StoredVersion {
   readonly version: number;
   readonly createdAt: string;
   readonly document: unknown;
+}
+
+/**
+ * One errata correction, at one place in one document.
+ *
+ * `xpath` addresses the node the annotation belongs beside. It carries a 1-based ordinal
+ * on any segment whose name repeats, so three `JurisdictionSection` elements produce
+ * three distinct addresses rather than one shared between them.
+ */
+export interface ErrataApplication {
+  readonly issueNumber: number;
+  readonly kind: IssueReference["kind"];
+  readonly xpath: string;
+  readonly schemaExpected: string;
+  readonly errataApplied: string;
+  readonly paragraph: string;
+  readonly reason: string;
+}
+
+/** A rule the guidance says must not be applied, reported on every run. */
+export interface SuppressionRecord {
+  readonly issue: number;
+  readonly validationRule: number;
+  readonly paragraph: string;
+  readonly reason: string;
+}
+
+export interface Finding {
+  readonly rule: number;
+  readonly severity: "error" | "warning" | "info";
+  readonly path: string;
+  readonly message: string;
+  readonly issue: number | null;
+}
+
+export interface ComputedJurisdiction {
+  readonly code: string | null;
+  /** Decimal strings, never floats. `0.1000` and `0.1` are different filings. */
+  readonly etrRate: string | null;
+  readonly topUpTaxPercentage: string | null;
+  readonly topUpTax: string | null;
+  readonly additionalTopUpTax: string;
+  readonly excessProfits: string;
+  /** Why the schema cannot carry the computed rate. Empty when it can. */
+  readonly breaches: readonly string[];
+  readonly roundingBreachesTolerance: boolean;
+}
+
+export interface ValidationRun {
+  readonly id: string;
+  readonly status: "clean" | "errors" | "engine_failed";
+  readonly engineVersion: string;
+  readonly createdAt: string;
+  readonly findings: readonly Finding[];
+  readonly suppressions: readonly SuppressionRecord[];
+  readonly computed: { readonly jurisdictions: readonly ComputedJurisdiction[] };
+}
+
+/** `run` is null only when the version has never been validated. */
+export interface ValidationResponse {
+  readonly run: ValidationRun | null;
+  readonly errata: readonly ErrataApplication[];
+}
+
+export interface DocumentChange {
+  readonly xpath: string;
+  readonly kind: "added" | "removed" | "changed";
+  readonly before: string | null;
+  readonly after: string | null;
 }
 
 const withCookie = (cookie: string | undefined) => (cookie === undefined ? {} : { cookie });

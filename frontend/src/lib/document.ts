@@ -65,11 +65,41 @@ export const childElements = (element: GirElement): readonly GirElement[] =>
 /**
  * A stable address for a node, matching the paths the errata rules use.
  *
- * Phase 7 aligns a margin annotation to a node by this path, so it is built here where
- * the tree is walked rather than derived again from the rendered output.
+ * The margin aligns an annotation to a node by this path, so it is built here where the
+ * tree is walked rather than derived again from the rendered output.
+ *
+ * The ordinal is what makes the address unique. A GIR repeats `JurisdictionSection`, and
+ * without it three jurisdictions share one path: every annotation then matches the first
+ * of them and the margin reads as plausible while pointing at the wrong node. The engine
+ * writes the same 1-based bracket form, and `normalizePath` is what reconciles the two
+ * sides' namespace prefixes.
  */
-export const childPath = (parentPath: string, child: GirElement): string =>
-  `${parentPath}/${localName(child.name)}`;
+export const childPath = (parentPath: string, child: GirElement, siblings: readonly GirNode[]) =>
+  `${parentPath}/${indexedSegment(siblings, child)}`;
+
+const indexedSegment = (siblings: readonly GirNode[], child: GirElement): string => {
+  const name = localName(child.name);
+  const matching = siblings.filter((node) => isElement(node) && localName(node.name) === name);
+
+  if (matching.length <= 1) return name;
+  return `${name}[${matching.indexOf(child) + 1}]`;
+};
+
+/**
+ * One canonical spelling for a path, so both sides of the match agree.
+ *
+ * The engine reports the document's own names, `globe:JurisdictionSection[1]`, while the
+ * tree renders local names. Casing is unreliable on both sides too: the guidance writes
+ * `GloBEBody`, `GlobeBody` and `GLOBEBody` for one element, and the schema declares
+ * `GLoBETax` where its own type is `GLOBETax`. Comparing raw strings would silently match
+ * nothing and the margin would render empty on a document with corrections in it.
+ */
+export const normalizePath = (path: string): string =>
+  path
+    .split("/")
+    .filter((segment) => segment.length > 0)
+    .map((segment) => localName(segment).toLowerCase())
+    .join("/");
 
 /**
  * How a filer identifies one repeated section from another.

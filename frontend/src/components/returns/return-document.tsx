@@ -1,36 +1,68 @@
 "use client";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
-import type { FC } from "react";
-import { api } from "@/lib/api";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { type FC, useMemo } from "react";
+import Button from "@/components/ui/button";
+import { AnnotationIndex } from "@/lib/annotations";
+import { api, type SuppressionRecord } from "@/lib/api";
 import type { GirDocument } from "@/lib/document";
 import { childElements, childKey, localName } from "@/lib/document";
 import { queryKeys } from "@/lib/query-keys";
-import DocumentNode from "./document-node";
+import DocumentNode, { NODE_GRID } from "./document-node";
+import JurisdictionFigures from "./jurisdiction-figures";
+import { SuppressionNote } from "./margin-note";
 import ReturnHeader from "./return-header";
 
 /**
- * The return as a readable document.
+ * The return as a marked-up document.
  *
- * The margin is phase 7. What this establishes is the tree and the node paths it walks,
- * because the annotations attach to those paths. The right column is reserved rather
- * than filled so the two-column reading measure is what gets reviewed now, not after
- * the annotations arrive and change every line length.
+ * Left is the filer's return, right is the margin. Every errata correction is annotated
+ * against the element it changed, and every disapplied validation rule is named. If the
+ * margin could be deleted and this still made sense, the product would have failed: a
+ * schema-valid GIR is not a correct GIR, and this is where that is visible rather than
+ * asserted.
  */
 const ReturnDocument: FC<{ returnId: string }> = ({ returnId }) => {
+  const queryClient = useQueryClient();
+
   const { data } = useSuspenseQuery({
     queryKey: queryKeys.return(returnId),
     queryFn: () => api.getReturn(returnId),
   });
 
+  const version = data.version?.version ?? null;
+
+  const { data: validation } = useSuspenseQuery({
+    queryKey: queryKeys.validation(returnId, version),
+    // A return with no saved version has nothing to validate, and asking would 404.
+    queryFn: () =>
+      version === null
+        ? Promise.resolve({ run: null, errata: [] })
+        : api.getValidation(returnId, version),
+  });
+
+  const { mutate: revalidate, isPending } = useMutation({
+    mutationFn: () => {
+      if (version === null) throw new Error("no version to validate");
+      return api.runValidation(returnId, version);
+    },
+    onSuccess: (result) => {
+      queryClient.setQueryData(queryKeys.validation(returnId, version), result);
+    },
+  });
+
   const document = data.version?.document as GirDocument | undefined;
 
-  return (
-    <>
-      <ReturnHeader record={data.return} />
+  const annotations = useMemo(
+    () => new AnnotationIndex(validation.errata, validation.run?.findings ?? []),
+    [validation],
+  );
 
-      <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-8">
-        {document === undefined ? (
+  if (document === undefined) {
+    return (
+      <>
+        <ReturnHeader record={data.return} />
+        <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-8">
           <div className="border-border border-t py-16 text-center">
             <p className="text-lg text-text-muted">No document saved yet.</p>
             <p className="mx-auto mt-2 max-w-md text-sm text-text-faint leading-relaxed">
@@ -38,54 +70,109 @@ const ReturnDocument: FC<{ returnId: string }> = ({ returnId }) => {
               against the element it changes.
             </p>
           </div>
-        ) : (
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem]">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-baseline gap-x-3 border-border border-b pb-2">
-                <span className="font-mono text-micro text-text-faint uppercase tracking-[0.14em]">
-                  Document
-                </span>
-                <span className="font-mono text-text-faint text-xs">
-                  {localName(document.root.name)}
-                </span>
-                <span className="figure ml-auto text-text-faint text-xs">
-                  v{data.version?.version}
-                </span>
-              </div>
+        </div>
+      </>
+    );
+  }
 
-              <div className="mt-2">
-                {childElements(document.root).map((child, index) => (
-                  <DocumentNode
-                    depth={0}
-                    element={child}
-                    key={childKey(child, index)}
-                    parentPath={localName(document.root.name)}
-                  />
-                ))}
-              </div>
-            </div>
+  const root = document.root;
+  const suppressions = validation.run?.suppressions ?? [];
+  const jurisdictions = validation.run?.computed.jurisdictions ?? [];
 
-            {/*
-              The margin's column, held open deliberately.
-              Reserving it now means the document's measure does not change when phase 7
-              fills it, so the line length reviewed in this phase is the real one.
-            */}
-            <aside className="hidden lg:block">
-              <div className="sticky top-6">
-                <p className="border-border border-b pb-2 font-mono text-micro text-text-faint uppercase tracking-[0.14em]">
-                  Margin
-                </p>
-                <p className="mt-3 text-sm text-text-faint leading-relaxed">
-                  Errata corrections and suppressed validation rules are annotated here against the
-                  element each one changes.
-                </p>
-              </div>
-            </aside>
+  return (
+    <>
+      <ReturnHeader record={data.return} />
+
+      <div className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-8">
+        <div className={`${NODE_GRID} gap-x-8`}>
+          <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 border-border border-b pb-2">
+            <span className="font-mono text-micro text-text-faint uppercase tracking-[0.14em]">
+              Document
+            </span>
+            <span className="font-mono text-text-faint text-xs">{localName(root.name)}</span>
+            <span className="figure ml-auto text-text-faint text-xs">v{version}</span>
           </div>
+
+          <div className="hidden items-baseline justify-between border-border border-b pb-2 lg:flex">
+            <span className="font-mono text-micro text-text-faint uppercase tracking-[0.14em]">
+              Margin
+            </span>
+
+            {validation.run !== null && (
+              <Button disabled={isPending} onClick={() => revalidate()} size="sm" variant="ghost">
+                {isPending ? "Running" : "Re-run"}
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {validation.run === null ? (
+          <UnvalidatedNotice onRun={() => revalidate()} pending={isPending} />
+        ) : (
+          <Suppressions records={suppressions} />
         )}
+
+        <div className="mt-2">
+          {childElements(root).map((child, index) => (
+            <DocumentNode
+              annotations={annotations}
+              depth={0}
+              element={child}
+              key={childKey(child, index)}
+              parentPath={localName(root.name)}
+              siblings={root.children}
+            />
+          ))}
+        </div>
+
+        {jurisdictions.length > 0 && <JurisdictionFigures jurisdictions={jurisdictions} />}
       </div>
     </>
   );
 };
+
+/**
+ * The four disapplied rules, stated before the document rather than inside it.
+ *
+ * They are not attached to any node: they describe rules that were not run over the whole
+ * filing. Rendering them only when there are also findings would make a clean return show
+ * nothing, and the product's entire thesis would vanish on exactly the happy path a filer
+ * sees most often.
+ */
+const Suppressions: FC<{ records: readonly SuppressionRecord[] }> = ({ records }) => {
+  if (records.length === 0) return null;
+
+  return (
+    <section className="mt-6 border-ink-suppressed/25 border-t border-b py-4">
+      <p className="max-w-prose text-sm text-text-muted leading-relaxed">
+        <span className="text-ink-suppressed">
+          {records.length} validation rules were not applied to this return.
+        </span>{" "}
+        The guidance disapplies them because applying them rejects correct filings. They are
+        reported on every run, including this one.
+      </p>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        {records.map((record) => (
+          <SuppressionNote key={record.validationRule} suppression={record} />
+        ))}
+      </div>
+    </section>
+  );
+};
+
+/** A version that has never been validated. The margin has nothing to say until it is. */
+const UnvalidatedNotice: FC<{ onRun: () => void; pending: boolean }> = ({ onRun, pending }) => (
+  <section className="mt-6 flex flex-wrap items-center justify-between gap-4 border-border border-t border-b py-4">
+    <p className="max-w-prose text-sm text-text-muted leading-relaxed">
+      This version has not been validated. Run the engine to see which errata corrections apply and
+      which validation rules were suppressed.
+    </p>
+
+    <Button disabled={pending} onClick={onRun} size="sm">
+      {pending ? "Running" : "Validate"}
+    </Button>
+  </section>
+);
 
 export default ReturnDocument;
