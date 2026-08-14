@@ -18,6 +18,11 @@ out/
 # test artifacts
 coverage/
 **/e2e/screenshots/
+# Scratch probes and browser profiles written while auditing. A profile directory left
+# in the source tree holds locked files that Turbopack tries to read, which fails the
+# build with an os error 33 that looks nothing like its cause.
+**/e2e/_*
+**/e2e/.audit-fixture.json
 **/test-results/
 **/playwright-report/
 **/.vitest-cache/

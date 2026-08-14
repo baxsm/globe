@@ -98,6 +98,45 @@ describe("markXml", () => {
     expect(lines.find((line) => line.text.includes("252000"))?.issue).toBe(7);
   });
 
+  it("keeps every issue where one line carries several corrected elements", () => {
+    // The real shape, and the one every other case here misses: the serializer emits all
+    // three `AdditionalDataPoint` augmentations onto a single line, 933 characters on the
+    // rich fixture, so issues 2, 4 and 6 sit on separate elements of one line. Stopping
+    // at the first match tagged it "issue 02" and left issues 4 and 6 accounted for
+    // nowhere in the export, which is the silent omission this view exists to prevent.
+    //
+    // A fixture with one element per line cannot express this, which is why it survived.
+    const oneLine = [
+      "<globe:GLOBE_OECD>",
+      "\t<globe:GLOBEBody>",
+      "\t\t<globe:JurisdictionSection>",
+      "\t\t\t<globe:ADT1><globe:Amount>62000</globe:Amount></globe:ADT1><globe:ADT2><globe:Amount>1250000</globe:Amount></globe:ADT2><globe:ADT3><globe:Amount>0</globe:Amount></globe:ADT3>",
+      "\t\t</globe:JurisdictionSection>",
+      "\t</globe:GLOBEBody>",
+      "</globe:GLOBE_OECD>",
+    ].join("\n");
+
+    const base = "globe:GLOBEBody/globe:JurisdictionSection";
+    const lines = markXml(oneLine, [
+      application(`${base}/globe:ADT3`, 6),
+      application(`${base}/globe:ADT1`, 2),
+      application(`${base}/globe:ADT2`, 4),
+    ]);
+
+    const line = lines.find((entry) => entry.text.includes("ADT1"));
+
+    expect(line?.issues).toEqual([2, 4, 6]);
+    expect(line?.issue).toBe(2);
+  });
+
+  it("reports no issues on a line the errata left alone", () => {
+    const lines = markXml(XML, [
+      application("globe:JurisdictionSection[1]/globe:AdjustedIncomeTax/globe:Total", 5),
+    ]);
+
+    expect(lines.find((line) => line.text.includes("2400000"))?.issues).toEqual([]);
+  });
+
   it("handles a self-closing element without losing its place", () => {
     const withEmpty = XML.replace(
       "<globe:AdjustedFANIL>",

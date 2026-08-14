@@ -173,9 +173,16 @@ test.describe("the margin", () => {
     // The single most important assertion in the phase. Four rules are disapplied on
     // every run, and a surface that only showed them alongside findings would render
     // nothing on the happy path a filer sees most often.
-    await expect(
-      page.getByText("4 validation rules were not applied to this return."),
-    ).toBeVisible();
+    //
+    // The count is always stated; the four notes fold away, because they are identical
+    // on every return and rendering them open put them above the filer's own document.
+    // Both halves are asserted: a fold that never opens hides them as effectively as
+    // never rendering them.
+    await expect(page.getByText("4 validation rules were not applied")).toBeVisible();
+    await expect(page.getByText("Rule 60025", { exact: true })).toBeHidden();
+
+    await page.getByText("Show", { exact: true }).click();
+
     // The rule number and the "not applied" mark are separate elements, so each is
     // addressed on its own rather than as one string.
     for (const rule of [60025, 60026, 70092, 70028]) {
@@ -243,6 +250,9 @@ test.describe("the margin", () => {
     // The margin collapses inline rather than disappearing. Hiding it on a phone would
     // hide the product.
     await expect(page.getByText("Issue 01").first()).toBeVisible();
+
+    // The suppressions fold on a phone too, and open to the same four rules.
+    await page.getByText("Show", { exact: true }).click();
     await expect(page.getByText("Rule 60025", { exact: true })).toBeVisible();
 
     const overflow = await page.evaluate(
@@ -302,9 +312,7 @@ test.describe("saving a GIR", () => {
     await expect(page.getByText("No document saved yet.")).toBeHidden();
     await page.getByRole("button", { name: "Validate" }).click();
 
-    await expect(
-      page.getByText("4 validation rules were not applied to this return."),
-    ).toBeVisible();
+    await expect(page.getByText("4 validation rules were not applied")).toBeVisible();
 
     // Each of these fires only because an election above said so, and each writes an
     // element the document has no line for, so they land under "Added by the errata".

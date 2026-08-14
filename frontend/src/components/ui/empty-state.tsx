@@ -11,8 +11,11 @@ interface EmptyStateProps {
   readonly children?: ReactNode;
 }
 
+// No opening rule. Every caller places this directly beneath something that already
+// draws its own bottom border, so the two landed about 40px apart and read as a mistake
+// rather than as a division. The whitespace is the separation.
 const EmptyState: FC<EmptyStateProps> = ({ icon: Icon, title, body, children }) => (
-  <div className="border-border border-t py-16 text-center">
+  <div className="py-16 text-center">
     <Icon aria-hidden="true" className="mx-auto size-6 text-text-faint" strokeWidth={1.5} />
 
     <p className="mt-4 text-lg text-text-muted">{title}</p>

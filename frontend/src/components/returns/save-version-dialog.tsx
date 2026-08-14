@@ -143,7 +143,13 @@ const SaveVersionDialog: FC<SaveVersionDialogProps> = ({ returnId, open, onOpenC
           </div>
 
           <form className="flex min-h-0 flex-col" noValidate onSubmit={onSubmit}>
-            <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-6">
+            {/*
+              The fade is what says there is more below. Without it the body simply cuts
+              a heading in half at the footer's edge, which reads as a clipping bug
+              rather than as a scroll. Pure CSS, so it is correct on first paint and
+              disappears by itself once the content is scrolled to the end.
+            */}
+            <div className="scroll-fade min-h-0 flex-1 space-y-5 overflow-y-auto p-6">
               <div className="space-y-1.5">
                 <span className="font-medium text-sm">Document</span>
 

@@ -83,7 +83,7 @@ const ReturnsList: FC = () => {
             <div className="grid grid-cols-[1fr_auto] gap-4 pl-3 sm:grid-cols-[1fr_8rem_5rem_10rem]">
               <span>Return</span>
               <span className="hidden sm:block">Period</span>
-              <span className="hidden text-right sm:block">Version</span>
+              <span className="hidden text-right sm:block">Document</span>
               <span className="text-right">Updated</span>
             </div>
             <span className="sr-only">Actions</span>
@@ -100,11 +100,17 @@ const ReturnsList: FC = () => {
           */}
           {returns.map((item) => (
             <div
-              className="group grid grid-cols-[1fr_2rem] items-center border-border border-b transition-colors duration-150 last:border-b-0 hover:bg-sunk/50"
+              className="group grid grid-cols-[1fr_2rem] items-center border-border border-b transition-colors duration-150 last:border-b-0 has-[a:hover]:bg-sunk/60 has-[a:active]:bg-sunk"
               key={item.id}
             >
+              {/*
+                The anchor fills its cell rather than sitting inside it, so the whole
+                row is the target the hover promises. Measured before this: the row
+                tinted under the cursor while reporting `cursor: auto`, because the
+                thing painting was the div and the thing clickable was a child of it.
+              */}
               <Link
-                className="grid grid-cols-[1fr_auto] items-baseline gap-4 py-3.5 pl-3 sm:grid-cols-[1fr_8rem_5rem_10rem]"
+                className="grid grid-cols-[1fr_auto] items-baseline gap-4 py-3.5 pl-3 transition-[translate] duration-150 active:translate-y-px sm:grid-cols-[1fr_8rem_5rem_10rem]"
                 href={`/returns/${item.id}`}
               >
                 <div className="min-w-0">
@@ -123,13 +129,15 @@ const ReturnsList: FC = () => {
 
                 {/*
                   A return with no saved version reports 0 from the query's coalesce. That
-                  is not "version zero", it is nothing saved yet, and it says so.
+                  is not "version zero", it is nothing saved yet, and it is the one thing
+                  on this row that decides whether there is anything to read: an em dash
+                  said it too quietly to find while scanning a column of them.
                 */}
-                <span className="figure hidden text-right text-sm text-text-muted sm:block">
+                <span className="hidden text-right text-sm sm:block">
                   {item.latestVersion === 0 ? (
-                    <span className="text-text-faint">&mdash;</span>
+                    <span className="text-text-faint text-xs">Nothing saved</span>
                   ) : (
-                    `v${item.latestVersion}`
+                    <span className="figure text-text-muted">v{item.latestVersion}</span>
                   )}
                 </span>
 

@@ -19,7 +19,11 @@ const CommandTrigger: FC = () => {
   }, []);
 
   return (
+    // The label is the button's only text, and it is hidden below `sm`, so without an
+    // explicit name this is an unnamed button on every route at phone width. axe rates
+    // that critical and a screen reader announces "button".
     <button
+      aria-label="Jump to a return"
       className="flex h-8 cursor-pointer items-center gap-2 rounded-sheet border border-border bg-ground px-2.5 text-text-faint text-xs transition-colors hover:border-border-strong hover:text-text-muted sm:min-w-56"
       onClick={() => setPaletteOpen(true)}
       type="button"

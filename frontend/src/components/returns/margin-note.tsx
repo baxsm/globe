@@ -60,12 +60,30 @@ export const ErrataNote: FC<ErrataNoteProps> = ({ application, repeated = false 
         </p>
         <p className="mt-1 text-ink-applied text-xs leading-relaxed">{errataApplied}</p>
 
-        <p className="mt-1.5 text-[0.6875rem] text-text-faint leading-relaxed">
-          {repeated ? null : `${reason}. `}
-          <span className="figure">
-            {paragraph.includes("-") ? "Paragraphs" : "Paragraph"} {paragraph}
-          </span>
-        </p>
+        {/*
+          The reason folds away. The struck value and its replacement are the product and
+          are always shown; the sentence explaining why is three or four lines, and with
+          33 corrections on one page that prose is what pushes the document's own rows
+          apart. Measured before this: 250px of empty margin between two adjacent notes,
+          with the tree rows stranded between them.
+        */}
+        <details className="group mt-1.5">
+          <summary className="figure cursor-pointer list-none text-[0.6875rem] text-text-faint transition-colors hover:text-text-muted">
+            <span className="underline decoration-border underline-offset-2 group-open:hidden">
+              Why
+            </span>
+            <span className="hidden underline decoration-border underline-offset-2 group-open:inline">
+              {paragraph.includes("-") ? "Paragraphs" : "Paragraph"} {paragraph}
+            </span>
+          </summary>
+
+          <p className="mt-1 text-[0.6875rem] text-text-faint leading-relaxed">
+            {repeated ? null : `${reason}. `}
+            <span className="figure">
+              {paragraph.includes("-") ? "Paragraphs" : "Paragraph"} {paragraph}
+            </span>
+          </p>
+        </details>
       </div>
     </article>
   );

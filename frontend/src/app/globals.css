@@ -31,8 +31,14 @@
   --color-text: oklch(23% 0.012 60);
   --color-text-muted: oklch(48% 0.012 65);
 
-  /* Carries the small print at 11px, so it has to clear AA: 4.6:1 on the ground. */
-  --color-text-faint: oklch(55% 0.011 70);
+  /*
+   * Carries the small print at 11px, so it has to clear AA on every ground it lands on,
+   * not only the page's. At 55% it measured 4.63:1 on the ground and 4.38:1 on a
+   * corrected row, which is darker: the small print failed on exactly the rows the
+   * errata rewrote. 53% clears all three: 5.05 on ground, 5.29 on surface, 4.77 on
+   * corrected.
+   */
+  --color-text-faint: oklch(53% 0.011 70);
 
   /*
    * The three ink roles the margin is built from: a deletion's red, the blue-black of
@@ -42,6 +48,16 @@
   --color-ink-struck: oklch(50% 0.16 25);
   --color-ink-applied: oklch(42% 0.13 255);
   --color-ink-suppressed: oklch(52% 0.12 75);
+
+  /*
+   * The ground of a document row the errata rewrote.
+   *
+   * A wash cannot carry this on its own: composited over the ground even at 10% the
+   * ratio is 1.18:1, which is why the previous 3.5% tint measured 1.06:1 and was not
+   * visible at all. The value itself is what carries the mark, in `.bg-corrected` below;
+   * this only warms the line behind it, so it reads as paper rather than a highlighter.
+   */
+  --color-corrected: oklch(96.4% 0.011 250);
 
   /*
    * `bg-ink-applied/[0.06]` resolved against the surface. The pinned line-number column
@@ -195,6 +211,53 @@
 
   ::selection {
     background-color: oklch(42% 0.13 255 / 0.16);
+  }
+
+  /*
+   * A line the errata rewrote.
+   *
+   * The tint alone cannot carry this: over this ground even a 10% ink wash measures
+   * 1.18:1, which is why the 3.5% version it replaces was invisible at 1.06:1. The
+   * value itself is what changed, so the value is what gets marked, and the wash only
+   * warms the line it sits on.
+   *
+   * No left rule. One was tried here and rejected: the row already sits inside up to
+   * eight indent guides, so a rule down its edge reads as another level of nesting
+   * rather than as an annotation. That is the same reason the margin note marks its
+   * kind with a dot.
+   */
+  .bg-corrected {
+    background-color: var(--color-corrected);
+  }
+
+  /*
+   * A scrolling pane says so, by fading its own last few pixels.
+   *
+   * `background-attachment: local` paints the gradient with the content, so the fade is
+   * present while there is more below and gone at the end. No scroll listener, correct
+   * on first paint, and nothing to keep in sync.
+   */
+  .scroll-fade {
+    background:
+      linear-gradient(var(--color-surface) 30%, transparent) top / 100% 24px no-repeat local,
+      linear-gradient(transparent, var(--color-surface) 70%) bottom / 100% 24px no-repeat local,
+      radial-gradient(farthest-side at 50% 0, oklch(23% 0.012 60 / 0.08), transparent) top / 100%
+      10px no-repeat scroll,
+      radial-gradient(farthest-side at 50% 100%, oklch(23% 0.012 60 / 0.08), transparent) bottom /
+      100% 10px no-repeat scroll;
+  }
+
+  /*
+   * Scoped to the value, not to every `.figure` in the row. A container's child count
+   * is also a figure, so the unscoped rule marked the count `4` as a corrected value on
+   * a row where nothing had been rewritten.
+   */
+  .bg-corrected .corrected-value {
+    color: var(--color-ink-applied);
+    text-decoration: underline;
+    text-decoration-color: oklch(42% 0.13 255 / 0.35);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
   }
 }
 

@@ -21,10 +21,13 @@ const DESTINATIONS = [
 const Rail: FC = () => {
   const pathname = usePathname();
 
+  // The rail separates itself by sitting on the ground while the content sits on the
+  // surface, not by drawing a rule down the page. A hard vertical border here runs the
+  // full height of every route and reads as a frame around the document.
   return (
     <nav
       aria-label="Sections"
-      className="sticky top-0 z-40 flex shrink-0 gap-1 border-border border-b bg-surface px-3 py-2 sm:h-dvh sm:w-52 sm:flex-col sm:gap-0.5 sm:border-r sm:border-b-0 sm:px-3 sm:py-4"
+      className="sticky top-0 z-40 flex shrink-0 gap-1 border-border border-b bg-ground px-3 py-2 sm:h-dvh sm:w-52 sm:flex-col sm:gap-0.5 sm:border-b-0 sm:px-3 sm:py-4"
     >
       <Link className="mb-0 hidden items-baseline gap-2 px-3 py-2 sm:mb-4 sm:flex" href="/returns">
         <span className="font-medium text-lg tracking-[-0.01em]">globe</span>

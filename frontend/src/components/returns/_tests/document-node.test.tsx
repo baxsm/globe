@@ -156,7 +156,27 @@ describe("the margin", () => {
       "href",
       "/reference#issue-5",
     );
-    expect(screen.getByText(/Paragraph 16/)).toBeInTheDocument();
+
+    // The citation appears twice by design: on the summary once the reason is expanded,
+    // and in the reason itself. `getAllByText` rather than `getByText` for that reason.
+    expect(screen.getAllByText(/Paragraph 16/).length).toBeGreaterThan(0);
+  });
+
+  it("folds the reason away and keeps the struck and applied values shown", () => {
+    const node = element("globe:Total", [text("252000")]);
+    const index = new AnnotationIndex([application("globe:Total")], []);
+
+    renderNode(node, { index });
+
+    // The pair that is the product is always visible; the prose is behind a disclosure.
+    // Always-open prose measured a note at 250px, which pushed the document's own rows
+    // apart on a return carrying 33 corrections.
+    expect(screen.getByText("current tax expense after cross-allocation")).toBeVisible();
+    expect(screen.getByText("the total including deferred tax expense")).toBeVisible();
+
+    const details = screen.getByText("Why").closest("details");
+    expect(details).not.toBeNull();
+    expect(details).not.toHaveAttribute("open");
   });
 
   it("does not annotate a node the run said nothing about", () => {

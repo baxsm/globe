@@ -46,7 +46,12 @@ const AppLayout = async ({ children }: { children: ReactNode }) => {
       <div className="flex min-h-dvh flex-col sm:flex-row">
         <Rail />
 
-        <div className="flex min-w-0 flex-1 flex-col">
+        {/*
+          The content sits on the surface and the rail on the ground, which is what
+          separates them. The alternative is a rule down the full height of every route,
+          and that reads as a frame drawn around the document rather than as chrome.
+        */}
+        <div className="flex min-w-0 flex-1 flex-col bg-surface">
           <Topbar email={user.email} />
           <main className="min-w-0 flex-1">{children}</main>
         </div>

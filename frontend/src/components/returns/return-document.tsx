@@ -2,6 +2,7 @@
 
 import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { FileQuestion, RefreshCw, Upload } from "lucide-react";
+import Link from "next/link";
 import { type FC, useMemo, useState } from "react";
 import Button from "@/components/ui/button";
 import EmptyState from "@/components/ui/empty-state";
@@ -90,26 +91,43 @@ const ReturnDocument: FC<{ returnId: string }> = ({ returnId }) => {
   const suppressions = validation.run?.suppressions ?? [];
   const jurisdictions = validation.run?.computed.jurisdictions ?? [];
 
+  // Distinct addresses, not applications. Two rules can rewrite one element, and a
+  // filer reading "33 lines" against 30 marked rows would be counting something the
+  // page does not show them.
+  const correctedCount = new Set(validation.errata.map(({ xpath }) => xpath)).size;
+
   return (
     <>
       <ReturnHeader record={data.return} />
 
       <Measure className="py-8">
         {/*
-          One rule across the page, not one per column. The suppressions directly beneath
-          span the full width, so splitting this into "Document" and "Margin" halves drew
-          a header for two columns that do not begin until the tree further down, and left
-          the right-hand rule sitting over nothing.
-
-          No bottom border here either: whatever follows opens with its own rule, and two
-          of them 24px apart read as a mistake rather than as a division.
+          What a filer opens this page to learn, stated as a sentence rather than as a
+          strip of metadata. The previous version read `DOCUMENT GLOBE_OECD v2`, which
+          restates the route and the tab they just clicked; the number of lines the
+          errata rewrote is the fact that decides whether this return needs reading.
         */}
-        <div className="flex h-11 flex-wrap items-center gap-x-3">
-          <span className="font-mono text-micro text-text-faint uppercase tracking-[0.14em]">
-            Document
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2 pb-1">
+          {/*
+            A real link, because it is styled like one. This read as blue body text and a
+            probe clicked it three times expecting the list of changed lines. The export
+            already carries that list with a stepper that walks it, so the count leads
+            there rather than being a coloured phrase that ignores the pointer.
+          */}
+          <p className="text-base">
+            <Link
+              className="rounded-[1px] text-ink-applied underline decoration-ink-applied/30 underline-offset-4 transition-colors hover:decoration-ink-applied"
+              href={`/returns/${data.return.id}/xml`}
+            >
+              {correctedCount} {correctedCount === 1 ? "line carries" : "lines carry"} an errata
+              correction
+            </Link>
+            <span className="text-text-muted"> rather than the value the filer wrote.</span>
+          </p>
+
+          <span className="figure text-text-faint text-xs">
+            {localName(root.name)} v{version}
           </span>
-          <span className="font-mono text-text-faint text-xs">{localName(root.name)}</span>
-          <span className="figure text-text-faint text-xs">v{version}</span>
 
           {validation.run !== null && (
             <Button
@@ -168,21 +186,39 @@ const Suppressions: FC<{ records: readonly SuppressionRecord[] }> = ({ records }
   if (records.length === 0) return null;
 
   return (
-    <section className="mt-6 border-ink-suppressed/25 border-t border-b py-4">
-      <p className="max-w-prose text-sm text-text-muted leading-relaxed">
+    /*
+      Folded shut by default, and deliberately so.
+      These four are identical on every return the product will ever show: the guidance
+      disapplies exactly four rules and they are reported on every run. Rendered open
+      above the document they were the first thing on the page, four notes in a two
+      column grid outranking the filer's own return. The count stays visible, because a
+      suppression that is never mentioned is the silent omission this surface exists to
+      prevent.
+    */
+    <details className="group mt-6">
+      {/*
+        One flowing sentence, not three flex children. As separate items they wrapped
+        into three ragged columns at 375px, each breaking mid-phrase.
+      */}
+      <summary className="cursor-pointer list-none py-2 text-sm">
         <span className="text-ink-suppressed">
-          {records.length} validation rules were not applied to this return.
+          {records.length} validation rules were not applied
         </span>{" "}
-        The guidance disapplies them because applying them rejects correct filings. They are
-        reported on every run, including this one.
-      </p>
+        <span className="text-text-muted">because applying them rejects correct filings.</span>{" "}
+        <span className="figure whitespace-nowrap text-text-faint text-xs underline decoration-border underline-offset-2 group-open:hidden">
+          Show
+        </span>
+        <span className="figure hidden whitespace-nowrap text-text-faint text-xs underline decoration-border underline-offset-2 group-open:inline">
+          Hide
+        </span>
+      </summary>
 
       {/*
         Staggered by index so the four arrive in sequence rather than as one block.
         The delay is capped by the list being four long; a longer list would need it
         clamped, and this one cannot grow because the guidance disapplies exactly four.
       */}
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+      <div className="mt-2 mb-4 grid gap-3 sm:grid-cols-2">
         {records.map((record, index) => (
           <div
             className="animate-note-in"
@@ -193,7 +229,7 @@ const Suppressions: FC<{ records: readonly SuppressionRecord[] }> = ({ records }
           </div>
         ))}
       </div>
-    </section>
+    </details>
   );
 };
 

@@ -53,7 +53,7 @@ const ReferenceView: FC = () => {
         widens the track past the viewport instead of wrapping, and the whole page
         gains a horizontal scrollbar on a phone.
       */}
-      <dl className="mt-8 grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2 border-border border-y py-4 text-sm">
+      <dl className="mt-8 grid grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-2 rounded-sheet bg-ground px-5 py-4 text-sm">
         <dt className="font-mono text-micro text-text-faint uppercase tracking-[0.14em]">Schema</dt>
         <dd className="font-mono text-text-muted">{schema.schemaVersion}</dd>
 
@@ -97,12 +97,18 @@ const ReferenceView: FC = () => {
         Every margin annotation in the product links here by number, so arriving at
         issue 11 and wanting issue 4 otherwise means scrolling and reading headings.
       */}
-      <nav aria-label="Issues" className="mt-8 border-border border-t pt-4">
+      {/*
+        No rule above this. The block it follows already groups itself by sitting on the
+        ground, and a rule 24px under that block reads as a mistake rather than as a
+        division. Counted before this pass: five full-width rules in the first 950px of
+        this page, on a surface whose job is reading.
+      */}
+      <nav aria-label="Issues" className="mt-8 flex flex-wrap items-baseline gap-x-4 gap-y-2">
         <span className="font-mono text-micro text-text-faint uppercase tracking-[0.14em]">
           Jump to
         </span>
 
-        <div className="mt-2.5 flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1.5">
           {issues.map((issue) => (
             <a
               className="figure rounded-sheet border border-border bg-surface px-2 py-1 text-text-muted text-xs transition-colors duration-150 hover:border-border-strong hover:bg-sunk hover:text-text"
@@ -126,8 +132,10 @@ const ReferenceView: FC = () => {
 
 const IssueEntry: FC<{ issue: IssueReference }> = ({ issue }) => (
   // `scroll-mt` keeps the heading clear of the sticky topbar when linked to by anchor.
+  // No trailing rule on the last entry, and none opening the first: fifteen rules for
+  // fourteen entries turned a reading page into a table.
   <article
-    className="scroll-mt-20 border-border border-b py-6 first:border-t"
+    className="scroll-mt-20 border-border border-b py-6 last:border-b-0"
     id={`issue-${issue.number}`}
   >
     <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">

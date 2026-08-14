@@ -53,7 +53,12 @@ const LoginForm: FC = () => {
         the sheet is the thing being written on. Reversed, the form reads as the
         background and the prose as the card sitting on top of it.
       */}
-      <section className="relative hidden flex-col justify-center gap-16 border-border border-r bg-ground px-12 py-14 lg:flex xl:px-16">
+      {/*
+        No rule between the panels. The ground change already separates them, and drawing
+        a border as well puts a hard vertical line down the middle of the first screen
+        anyone sees. Same reasoning as the rail, which separates the same way.
+      */}
+      <section className="relative hidden flex-col justify-center gap-16 bg-ground px-12 py-14 lg:flex xl:px-16">
         <p className="absolute top-14 left-12 font-mono text-micro text-text-faint uppercase tracking-[0.18em] xl:left-16">
           GloBE Information Return
         </p>

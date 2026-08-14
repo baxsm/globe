@@ -13,6 +13,15 @@ export interface XmlLine {
   readonly text: string;
   /** The issue that wrote this line, or null where the filer's own value stands. */
   readonly issue: number | null;
+  /**
+   * Every issue that wrote this line, lowest first.
+   *
+   * The serializer puts all three `AdditionalDataPoint` augmentations on one 933-character
+   * line, so issues 2, 4 and 6 share it. Carrying only the first reported that line as
+   * issue 02 alone and left the other two corrections unaccounted for anywhere in the
+   * export, which is precisely the silent omission this view exists to prevent.
+   */
+  readonly issues: readonly number[];
 }
 
 /**
@@ -44,15 +53,17 @@ export const markXml = (
   xml: string,
   applications: readonly ErrataApplication[],
 ): readonly XmlLine[] => {
-  const wanted = new Map<string, number>();
+  // Every issue against a path, not just the lowest. Two rules can address one element,
+  // and reporting one of them loses the other.
+  const wanted = new Map<string, Set<number>>();
 
   for (const application of applications) {
     const key = normalizePath(application.xpath);
     const existing = wanted.get(key);
-    // The lowest issue number wins where two rules touch one element, so the mark does
-    // not depend on the order the applications arrived in.
-    if (existing === undefined || application.issueNumber < existing) {
-      wanted.set(key, application.issueNumber);
+    if (existing === undefined) {
+      wanted.set(key, new Set([application.issueNumber]));
+    } else {
+      existing.add(application.issueNumber);
     }
   }
 
@@ -60,7 +71,7 @@ export const markXml = (
   const frames: Frame[] = [{ counts: new Map() }];
 
   return xml.split("\n").map((text, index) => {
-    let issue: number | null = null;
+    const found = new Set<number>();
 
     for (const tag of text.matchAll(TAGS)) {
       const [, closing, name, , selfClosing] = tag;
@@ -83,10 +94,10 @@ export const markXml = (
 
       path.push(`${local}[${seen}]`);
 
-      // The first line to name an element wins the mark. A container and its only child
-      // on one line is rare in a serialized GIR, and marking the outer one is the honest
-      // reading: that is where the correction was addressed.
-      issue ??= matchOf(path, wanted);
+      // Every element named on this line contributes its issues, not only the first.
+      // The three augmentations are serialized onto one line, so stopping at the first
+      // match reported that line as issue 02 and dropped issues 04 and 06 entirely.
+      for (const number of matchOf(path, wanted)) found.add(number);
 
       if (selfClosing === "/") {
         path.pop();
@@ -95,12 +106,13 @@ export const markXml = (
       }
     }
 
-    return { number: index + 1, text, issue };
+    const issues = [...found].sort((a, b) => a - b);
+    return { number: index + 1, text, issue: issues[0] ?? null, issues };
   });
 };
 
 /**
- * The issue registered against a path, matched segment by segment from the leaf up.
+ * The issues registered against a path, matched segment by segment from the leaf up.
  *
  * Two things have to be reconciled. The engine addresses from inside the root element
  * while this walk starts at it, so the sides agree on a trailing chain rather than on the
@@ -113,12 +125,22 @@ export const markXml = (
  * ordinal treated as optional on the key's side. A key segment carrying an ordinal must
  * match it exactly, which is what keeps two repeats of a section apart.
  */
-const matchOf = (path: readonly string[], wanted: ReadonlyMap<string, number>): number | null => {
-  for (const [key, issue] of wanted) {
-    if (endsWithChain(path, key.split("/"))) return issue;
+const matchOf = (
+  path: readonly string[],
+  wanted: ReadonlyMap<string, ReadonlySet<number>>,
+): readonly number[] => {
+  // Every key that resolves to this element, not the first. One address is spelled
+  // several ways across the rules that target it: issue 2's augmentation arrives as
+  // `GLOBEBody/JurisdictionSection/AdditionalDataPoint` while issues 4 and 6 arrive
+  // prefixed and with an ordinal. Returning on the first match reported whichever key
+  // happened to be inserted first and dropped the rest.
+  const found: number[] = [];
+
+  for (const [key, issues] of wanted) {
+    if (endsWithChain(path, key.split("/"))) found.push(...issues);
   }
 
-  return null;
+  return found;
 };
 
 const endsWithChain = (path: readonly string[], key: readonly string[]): boolean => {
