@@ -6,7 +6,7 @@
   <img src="https://img.shields.io/badge/GIR-GLOBEXML__v1.0-7c5cff" alt="GIR schema GLOBEXML v1.0">
   <img src="https://img.shields.io/badge/guidance-3%20June%202026-c2410c" alt="Guidance 3 June 2026">
   <img src="https://img.shields.io/badge/TypeScript-strict-3178c6" alt="TypeScript strict">
-  <img src="https://img.shields.io/badge/tests-382-009966" alt="382 tests">
+  <img src="https://img.shields.io/badge/tests-360-009966" alt="360 tests">
 </p>
 
 <p align="center">
